@@ -9,6 +9,8 @@
 
 .idea
 
+
+###
 # front/EcodeliFront/.gitignore 
 # Logs
 logs
@@ -34,3 +36,54 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+###
+## Api gitignore
+
+#Maven
+api/target/
+api/pom.xml.tag
+api/pom.xml.releaseBackup
+api/pom.xml.versionsBackup
+api/release.properties
+api/.flattened-pom.xml
+
+# Eclipse
+api/.project
+api/.classpath
+api/.settings/
+api/bin/
+
+# IntelliJ
+api/.idea
+api/*.ipr
+api/*.iml
+api/*.iws
+
+# NetBeans
+api/nb-configuration.xml
+
+# Visual Studio Code
+api/.vscode
+api/.factorypath
+
+# OSX
+api/.DS_Store
+
+# Vim
+api/*.swp
+api/*.swo
+
+# patch
+api/*.orig
+api/*.rej
+
+# Local environment
+api/.env
+
+# Plugin directory
+.quarkus/cli/plugins/
+# TLS Certificates
+api/.certs/
+
