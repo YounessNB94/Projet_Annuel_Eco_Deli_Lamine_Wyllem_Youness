@@ -60,3 +60,15 @@ If you want to learn more about building native executables, please consult <htt
 Easily start your REST Web Services
 
 [Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+
+### Keycloak
+Secure your applications and services with Keycloak
+run a Keycloak server in docker for the first time using:
+
+```shell script
+docker compose up -d
+```
+## utility links
+* test longin at : <http://localhost:8080/q/dev-ui/quarkus-oidc/keycloak-provider>
+* login to keycloak admin console at: <http://localhost:8081/admin/master/console/>
+* login to keycloak realm at: <http://localhost:8081/realms/ecodeli/account>
