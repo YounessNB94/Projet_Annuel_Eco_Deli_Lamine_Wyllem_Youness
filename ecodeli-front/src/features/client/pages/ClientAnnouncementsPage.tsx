@@ -115,12 +115,12 @@ export const ClientAnnouncementsPage = () => {
   };
 
   const handleViewAnnouncement = (id: string) => {
-    // TODO: navigation réelle
-    // navigate(`/client/annonces/${id}`);
+    navigate(`/client/annonces/${id}`);
   };
 
   const handleEditAnnouncement = (id: string) => {
     void id;
+    navigate('/client/annonces/nouvelle');
   };
 
   const askDelete = (id: string) => {
@@ -291,7 +291,7 @@ export const ClientAnnouncementsPage = () => {
               }}
             >
               <Inventory2OutlinedIcon
-                sx={{ fontSize: 56, mb: 2, opacity: 0.6 }}
+                sx={{ color: "red", fontSize: 56, mb: 2, opacity: 0.6 }}
               />
               <Typography variant="h6" gutterBottom>
                 Aucune annonce trouvée
