@@ -80,7 +80,7 @@ api/*.orig
 api/*.rej
 
 # Local environment
-api/.env
+api/.env.keys
 
 # Plugin directory
 .quarkus/cli/plugins/
