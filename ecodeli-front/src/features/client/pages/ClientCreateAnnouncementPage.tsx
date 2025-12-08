@@ -14,6 +14,7 @@ import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import AttachMoneyOutlinedIcon from '@mui/icons-material/AttachMoneyOutlined';
 import { useNavigate } from 'react-router-dom';
 
+
 import type {
   AnnouncementFormErrors,
   AnnouncementFormValues,
@@ -94,14 +95,14 @@ export const ClientCreateAnnouncementPage = () => {
   const handleBack = () => navigate('/client/annonces');
 
   return (
-    <Box>
+    <Box sx={{ bgcolor: 'background.default' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-        <IconButton onClick={handleBack}>
+        <IconButton onClick={handleBack} sx={{ bgcolor: 'background.paper' }}>
           <ArrowBackIcon />
         </IconButton>
         <Box>
-          <Typography variant="h4" component="h1">
-            Créer une annonce
+          <Typography variant="h4" component="h1" fontWeight={700}>
+            Créer une annonce 
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Remplissez les informations de votre livraison
