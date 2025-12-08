@@ -1,0 +1,2 @@
+CREATE DATABASE ecodeli;
+CREATE DATABASE keycloak;
