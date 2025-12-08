@@ -137,7 +137,7 @@ export const ClientAnnouncementsPage = () => {
   };
 
   return (
-    <Box>
+    <Box sx={{ bgcolor: 'background.default' }}>
       <Box
         sx={{
           mb: 3,

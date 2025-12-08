@@ -7,6 +7,8 @@ import { ClientAnnouncementsPage } from '../features/client/pages/ClientAnnounce
 import { ClientDeliveriesPage } from '../features/client/pages/ClientDeliveriesPage';
 import { ClientPaymentsPage } from '../features/client/pages/ClientPaymentsPage';
 import { ClientCreateAnnouncementPage } from '../features/client/pages/ClientCreateAnnouncementPage';
+import { ClientDeliveryDetailPage } from '../features/client/pages/ClientDeliveryDetailPage';
+import { ClientDeliveryTrackingPage } from '../features/client/pages/ClientDeliveryTrackingPage';
 
 
 const NotFoundPage = () => (
@@ -27,6 +29,8 @@ export const AppRoutes = () => (
         <Route path="annonces" element={<ClientAnnouncementsPage />} />
         <Route path="annonces/nouvelle" element={<ClientCreateAnnouncementPage />} />
         <Route path="livraisons" element={<ClientDeliveriesPage />} />
+        <Route path="livraisons/:deliveryId" element={<ClientDeliveryDetailPage />} />
+        <Route path="livraisons/:deliveryId/tracking" element={<ClientDeliveryTrackingPage />} />
         <Route path="paiements" element={<ClientPaymentsPage />} />
       </Route>
 

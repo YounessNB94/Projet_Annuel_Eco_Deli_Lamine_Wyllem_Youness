@@ -42,13 +42,30 @@ export const ClientLayout = () => {
   const isActive = (path: string) => location.pathname.startsWith(path);
 
   return (
-    <Box sx={{ display: 'flex', gap: 3, mt: 2 }}>
-      <Box sx={{ width: 280, flexShrink: 0 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 3,
+        width: '100%',
+        bgcolor: 'background.default',
+        flexGrow: 1,
+        minHeight: '100%',
+        alignItems: 'stretch',
+      }}
+    >
+      <Box
+        sx={{
+          width: 280,
+          flexShrink: 0,
+          alignSelf: 'stretch',
+          bgcolor: 'background.paper',
+          borderRight: (t) => `1px solid ${t.palette.divider}`,
+        }}
+      >
         <List
           sx={{
-            bgcolor: 'background.paper',
-            borderRadius: 3,
             p: 1,
+            height: '100%',
           }}
         >
           {menuItems.map((item) => (
@@ -73,8 +90,14 @@ export const ClientLayout = () => {
           ))}
         </List>
       </Box>
-
-      <Box sx={{ flexGrow: 1 }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          minHeight: '100%',
+          px: { xs: 2, md: 3, lg: 4 },
+          py: { xs: 3, md: 4 },
+        }}
+      >
         <Outlet />
       </Box>
     </Box>
