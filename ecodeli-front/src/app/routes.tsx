@@ -9,6 +9,7 @@ import { ClientPaymentsPage } from '../features/client/pages/ClientPaymentsPage'
 import { ClientCreateAnnouncementPage } from '../features/client/pages/ClientCreateAnnouncementPage';
 import { ClientDeliveryDetailPage } from '../features/client/pages/ClientDeliveryDetailPage';
 import { ClientDeliveryTrackingPage } from '../features/client/pages/ClientDeliveryTrackingPage';
+import { ClientAnnouncementDetailPage } from '../features/client/pages/ClientAnnouncementDetailPage';
 
 
 const NotFoundPage = () => (
@@ -28,6 +29,7 @@ export const AppRoutes = () => (
         <Route path="dashboard" element={<ClientDashboardPage />} />
         <Route path="annonces" element={<ClientAnnouncementsPage />} />
         <Route path="annonces/nouvelle" element={<ClientCreateAnnouncementPage />} />
+        <Route path="annonces/:announcementId" element={<ClientAnnouncementDetailPage />} />
         <Route path="livraisons" element={<ClientDeliveriesPage />} />
         <Route path="livraisons/:deliveryId" element={<ClientDeliveryDetailPage />} />
         <Route path="livraisons/:deliveryId/tracking" element={<ClientDeliveryTrackingPage />} />
