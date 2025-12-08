@@ -43,7 +43,7 @@ export const ClientLayout = () => {
 
   return (
     <Box sx={{ display: 'flex', gap: 3, mt: 2 }}>
-      <Box sx={{ width: 240, flexShrink: 0 }}>
+      <Box sx={{ width: 280, flexShrink: 0 }}>
         <List
           sx={{
             bgcolor: 'background.paper',
@@ -64,7 +64,7 @@ export const ClientLayout = () => {
               <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
               <ListItemText
                 primary={
-                  <Typography variant="body2" fontWeight={500}>
+                  <Typography variant="body2" fontWeight={400} sx={{fontSize: '1.2rem'}}>
                     {item.label}
                   </Typography>
                 }

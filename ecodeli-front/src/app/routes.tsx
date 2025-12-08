@@ -6,6 +6,8 @@ import { ClientDashboardPage } from '../features/client/pages/ClientDashboardPag
 import { ClientAnnouncementsPage } from '../features/client/pages/ClientAnnouncementsPage';
 import { ClientDeliveriesPage } from '../features/client/pages/ClientDeliveriesPage';
 import { ClientPaymentsPage } from '../features/client/pages/ClientPaymentsPage';
+import { ClientCreateAnnouncementPage } from '../features/client/pages/ClientCreateAnnouncementPage';
+
 
 const NotFoundPage = () => (
   <Typography variant="h6" component="h1">
@@ -23,6 +25,7 @@ export const AppRoutes = () => (
         <Route index element={<Navigate to="annonces" replace />} />
         <Route path="dashboard" element={<ClientDashboardPage />} />
         <Route path="annonces" element={<ClientAnnouncementsPage />} />
+        <Route path="annonces/nouvelle" element={<ClientCreateAnnouncementPage />} />
         <Route path="livraisons" element={<ClientDeliveriesPage />} />
         <Route path="paiements" element={<ClientPaymentsPage />} />
       </Route>

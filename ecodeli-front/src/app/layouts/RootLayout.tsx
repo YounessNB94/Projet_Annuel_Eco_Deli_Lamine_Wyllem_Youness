@@ -10,8 +10,15 @@ export const RootLayout = ({ children }: PropsWithChildren) => (
         </Typography>
       </Toolbar>
     </AppBar>
-
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container
+      maxWidth={false}
+      disableGutters
+      sx={{
+        mt: 4,
+        mb: 4,
+        px: 3,
+      }}
+    >
       {children}
     </Container>
   </Box>
