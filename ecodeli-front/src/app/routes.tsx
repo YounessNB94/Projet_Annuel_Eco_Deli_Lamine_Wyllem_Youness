@@ -14,6 +14,10 @@ import { CourierLayout } from '../features/courier/layout/CourierLayout';
 import { CourierAvailableAnnouncementsPage } from '../features/courier/pages/CourierAvailableAnnouncementsPage';
 import { CourierDeliveriesPage } from '../features/courier/pages/CourierDeliveriesPage';
 import { CourierDeliveryDetailPage } from '../features/courier/pages/CourierDeliveryDetailPage';
+import { MerchantLayout } from '../features/merchant/layout/MerchantLayout';
+import { MerchantContractPage } from '../features/merchant/pages/MerchantContractPage';
+import { MerchantCreateHomeDeliveryAnnouncementPage } from '../features/merchant/pages/MerchantCreateHomeDeliveryAnnouncementPage';
+import { MerchantAnnouncementsPage } from '../features/merchant/pages/MerchantAnnouncementsPage';
 
 
 const NotFoundPage = () => (
@@ -54,6 +58,15 @@ export const AppRoutes = () => (
         <Route path="livraisons" element={<CourierDeliveriesPage />} />
         <Route path="livraisons/:deliveryId" element={<CourierDeliveryDetailPage />} />
         <Route path="historique" element={<ComingSoonPage label="historique" />} />
+      </Route>
+
+      <Route path="/merchant" element={<Navigate to="/merchant/contrat" replace />} />
+
+      <Route path="/merchant/*" element={<MerchantLayout />}>
+        <Route index element={<Navigate to="contrat" replace />} />
+        <Route path="contrat" element={<MerchantContractPage />} />
+        <Route path="annonces" element={<MerchantAnnouncementsPage />} />
+        <Route path="annonces/nouvelle" element={<MerchantCreateHomeDeliveryAnnouncementPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

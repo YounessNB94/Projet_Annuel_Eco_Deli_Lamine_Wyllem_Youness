@@ -1,59 +1,51 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
-import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
-import HistoryEduOutlinedIcon from '@mui/icons-material/HistoryEduOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 
 const navigationItems = [
   {
-    label: 'Annonces ',
-    path: '/courier/annonces',
-    icon: <CampaignOutlinedIcon fontSize="small" />,
+    label: 'Contrat',
+    path: '/merchant/contrat',
+    icon: <DescriptionOutlinedIcon fontSize="small" />,
   },
   {
-    label: 'Mes livraisons',
-    path: '/courier/livraisons',
-    icon: <LocalShippingOutlinedIcon fontSize="small" />,
+    label: 'Creer une annonce',
+    path: '/merchant/annonces/nouvelle',
+    icon: <AddCircleOutlineIcon fontSize="small" />,
   },
-//   {
-//     label: 'Historique',
-//     path: '/courier/historique',
-//     icon: <HistoryEduOutlinedIcon fontSize="small" />,
-//     disabled: true,
-//   },
+  {
+    label: 'Mes annonces',
+    path: '/merchant/annonces',
+    icon: <ListAltOutlinedIcon fontSize="small" />,
+  },
 ];
 
-export const CourierLayout = () => {
+export const MerchantLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        width: '100%',
-        flexGrow: 1,
-        bgcolor: 'background.default',
-      }}
-    >
+    <Box sx={{ display: 'flex', flexGrow: 1, width: '100%' }}>
       <Box
         sx={{
           width: 280,
-          borderRight: (theme) => `1px solid ${theme.palette.divider}`,
           bgcolor: 'background.paper',
+          borderRight: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
         <List sx={{ p: 1 }}>
           {navigationItems.map((item) => (
-            <ListItemButton
-              key={item.path}
-              disabled={item.disabled}
-              selected={isActive(item.path)}
-              onClick={() => !item.disabled && navigate(item.path)}
-              sx={{ borderRadius: 2, mb: 0.5, opacity: item.disabled ? 0.6 : 1 }}
-            >
+              <ListItemButton
+                key={item.path}
+                selected={isActive(item.path)}
+                disabled={item.disabled}
+                onClick={() => !item.disabled && navigate(item.path)}
+                sx={{ borderRadius: 2, mb: 0.5, opacity: item.disabled ? 0.6 : 1 }}
+              >
               <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
               <ListItemText
                 primary={
