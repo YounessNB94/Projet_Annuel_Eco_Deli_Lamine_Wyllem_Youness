@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Authenticated
-public class UsersResource {
+public class UserResource {
 
     private final SecurityIdentity identity;
     private final AppUserService appUserService;
@@ -28,11 +28,11 @@ public class UsersResource {
     private final UserAddressService userAddressService;
 
     @Inject
-    public UsersResource(SecurityIdentity identity,
-                         AppUserService appUserService,
-                         UserProfileService userProfileService,
-                         AddressService addressService,
-                         UserAddressService userAddressService) {
+    public UserResource(SecurityIdentity identity,
+                        AppUserService appUserService,
+                        UserProfileService userProfileService,
+                        AddressService addressService,
+                        UserAddressService userAddressService) {
         this.identity = identity;
         this.appUserService = appUserService;
         this.userProfileService = userProfileService;
