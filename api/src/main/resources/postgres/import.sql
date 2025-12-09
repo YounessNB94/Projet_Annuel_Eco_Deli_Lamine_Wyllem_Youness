@@ -28,11 +28,17 @@ INSERT INTO user_device (id, user_id, onesignal_player_id, platform, created_at)
 VALUES (1001, 2, 'onesignal-player-client-001', 'web', now())
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO document (id, storage_key, file_name, mime_type, size_bytes, sha256, created_at)
-VALUES (201, 'docs/courier/id_livreur_001.pdf', 'id_livreur_001.pdf', 'application/pdf', 12345, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', now()),
-       (202, 'docs/contracts/merchant_contract_001.pdf', 'merchant_contract_001.pdf', 'application/pdf', 23456, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', now()),
-       (203, 'docs/invoices/inv_2025_0001.pdf', 'inv_2025_0001.pdf', 'application/pdf', 34567, 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', now())
+INSERT INTO document (id, storage_key, file_name, mime_type, size_bytes, sha256, type, created_at)
+VALUES (201, 'courier/id_livreur_001.pdf', 'id_livreur_001.pdf', 'application/pdf', 12345, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'COURIER_PROOF', now()),
+       (202, 'contracts/merchant_contract_001.pdf', 'merchant_contract_001.pdf', 'application/pdf', 23456, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'CONTRACT', now()),
+       (203, 'invoices/inv_2025_0001.pdf', 'inv_2025_0001.pdf', 'application/pdf', 34567, 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', 'INVOICE', now())
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO document_access (document_id, user_id, can_read)
+VALUES (201, 3, true),
+       (202, 4, true),
+       (203, 2, true)
+ON CONFLICT (document_id, user_id) DO NOTHING;
 
 INSERT INTO courier_profile (user_id, status, validated_at, vehicle_type, max_weight_kg, iban_masked)
 VALUES (3, 'APPROVED', now(), 'CAR', 50.0, 'FR76 **** **** **** **** **** 123')

@@ -17,6 +17,6 @@ public record UserDto(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         @Valid UserProfileDto profile,
-        @Valid List<UserAddressDto> addresses
+        List<@Valid UserAddressDto> addresses
 ) {
 }
