@@ -43,11 +43,11 @@ const ComingSoonPage = ({ label }: { label: string }) => (
 export const AppRoutes = () => (
   <RootLayout>
     <Routes>
-      <Route path="/" element={<Navigate to="/client/annonces" replace />} />
-      <Route path="/client" element={<Navigate to="/client/annonces" replace />} />
+      <Route path="/" element={<Navigate to="/client/dashboard" replace />} />
+      <Route path="/client" element={<Navigate to="/client/dashboard" replace />} />
 
       <Route path="/client/*" element={<ClientLayout />}>
-        <Route index element={<Navigate to="annonces" replace />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ClientDashboardPage />} />
         <Route path="annonces" element={<ClientAnnouncementsPage />} />
         <Route path="annonces/nouvelle" element={<ClientCreateAnnouncementPage />} />

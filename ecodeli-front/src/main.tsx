@@ -8,6 +8,7 @@ import { CssBaseline, ThemeProvider } from '@mui/material';
 import App from './app/App';
 import { queryClient } from './shared/config/queryClient';
 import { theme } from './shared/theme/theme';
+import { AuthProvider } from './features/auth/context/AuthContext';
 
 const rootElement = document.getElementById('root') as HTMLElement;
 
@@ -16,9 +17,11 @@ ReactDOM.createRoot(rootElement).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </ThemeProvider>
     </QueryClientProvider>
