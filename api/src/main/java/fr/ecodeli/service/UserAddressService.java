@@ -66,4 +66,8 @@ public class UserAddressService {
         var id = new UserAddressId(user.getId(), addressId);
         getRequired(id);
     }
+
+    public List<UserAddress> listByUserId(Long userId) {
+        return repository.list("user.id", userId);
+    }
 }
