@@ -81,7 +81,7 @@ export const ClientLayout = () => {
               <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
               <ListItemText
                 primary={
-                  <Typography variant="body2" fontWeight={400} sx={{fontSize: '1.2rem'}}>
+                  <Typography variant="body2" fontWeight={500} sx={{fontSize: '1.2rem'}}>
                     {item.label}
                   </Typography>
                 }

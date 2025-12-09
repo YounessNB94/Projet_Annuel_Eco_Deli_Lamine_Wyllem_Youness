@@ -20,8 +20,7 @@ import type {
   AnnouncementFormValues,
   AnnouncementType,
 } from '../types/announcementForm';
-import { FormSectionCard } from '../components/FormSectionCard';
-import { TimeWindowFields } from '../components/TimeWindowFields';
+import { FormSectionCard, TimeWindowFields } from '../../../shared/components/form';
 import { AnnouncementPreviewCard } from '../components/AnnouncementPreviewCard';
 
 const INITIAL_VALUES: AnnouncementFormValues = {
