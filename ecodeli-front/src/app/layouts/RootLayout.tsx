@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from 'react';
-import { AppBar, Toolbar, Typography, Container, Box } from '@mui/material';
+import { Container, Box } from '@mui/material';
+import { AppHeader } from '../../shared/components/layout/AppHeader';
 
 export const RootLayout = ({ children }: PropsWithChildren) => (
   <Box
@@ -10,13 +11,7 @@ export const RootLayout = ({ children }: PropsWithChildren) => (
       flexDirection: 'column',
     }}
   >
-    <AppBar position="static">
-      <Toolbar>
-        <Typography variant="h6" component="div">
-          EcoDeli
-        </Typography>
-      </Toolbar>
-    </AppBar>
+    <AppHeader />
     <Container
       maxWidth={false}
       disableGutters
