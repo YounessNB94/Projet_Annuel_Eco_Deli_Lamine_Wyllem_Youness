@@ -10,11 +10,21 @@ import { ClientCreateAnnouncementPage } from '../features/client/pages/ClientCre
 import { ClientDeliveryDetailPage } from '../features/client/pages/ClientDeliveryDetailPage';
 import { ClientDeliveryTrackingPage } from '../features/client/pages/ClientDeliveryTrackingPage';
 import { ClientAnnouncementDetailPage } from '../features/client/pages/ClientAnnouncementDetailPage';
+import { CourierLayout } from '../features/courier/layout/CourierLayout';
+import { CourierAvailableAnnouncementsPage } from '../features/courier/pages/CourierAvailableAnnouncementsPage';
+import { CourierDeliveriesPage } from '../features/courier/pages/CourierDeliveriesPage';
+import { CourierDeliveryDetailPage } from '../features/courier/pages/CourierDeliveryDetailPage';
 
 
 const NotFoundPage = () => (
   <Typography variant="h6" component="h1">
     404 - Page non trouvée
+  </Typography>
+);
+
+const ComingSoonPage = ({ label }: { label: string }) => (
+  <Typography variant="body1" component="p">
+    La section {label} arrive bientôt.
   </Typography>
 );
 
@@ -34,6 +44,16 @@ export const AppRoutes = () => (
         <Route path="livraisons/:deliveryId" element={<ClientDeliveryDetailPage />} />
         <Route path="livraisons/:deliveryId/tracking" element={<ClientDeliveryTrackingPage />} />
         <Route path="paiements" element={<ClientPaymentsPage />} />
+      </Route>
+
+      <Route path="/courier" element={<Navigate to="/courier/annonces" replace />} />
+
+      <Route path="/courier/*" element={<CourierLayout />}>
+        <Route index element={<Navigate to="annonces" replace />} />
+        <Route path="annonces" element={<CourierAvailableAnnouncementsPage />} />
+        <Route path="livraisons" element={<CourierDeliveriesPage />} />
+        <Route path="livraisons/:deliveryId" element={<CourierDeliveryDetailPage />} />
+        <Route path="historique" element={<ComingSoonPage label="historique" />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
