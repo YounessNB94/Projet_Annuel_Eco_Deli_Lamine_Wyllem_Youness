@@ -18,6 +18,14 @@ import { MerchantLayout } from '../features/merchant/layout/MerchantLayout';
 import { MerchantContractPage } from '../features/merchant/pages/MerchantContractPage';
 import { MerchantCreateHomeDeliveryAnnouncementPage } from '../features/merchant/pages/MerchantCreateHomeDeliveryAnnouncementPage';
 import { MerchantAnnouncementsPage } from '../features/merchant/pages/MerchantAnnouncementsPage';
+import { AdminLayout } from '../features/admin/layout/AdminLayout';
+import { AdminDashboardPage } from '../features/admin/pages/AdminDashboardPage';
+import { AdminCouriersPage } from '../features/admin/pages/AdminCouriersPage';
+import { AdminPlaceholderPage } from '../features/admin/pages/AdminPlaceholderPage';
+import { AdminCourierDetailPage } from '../features/admin/pages/AdminCourierDetailPage';
+import { AdminAnnouncementsDeliveriesPage } from '../features/admin/pages/AdminAnnouncementsDeliveriesPage';
+import { AdminInvoicesPage } from '../features/admin/pages/AdminInvoicesPage';
+import { AdminNotificationsPage } from '../features/admin/pages/AdminNotificationsPage';
 
 
 const NotFoundPage = () => (
@@ -67,6 +75,18 @@ export const AppRoutes = () => (
         <Route path="contrat" element={<MerchantContractPage />} />
         <Route path="annonces" element={<MerchantAnnouncementsPage />} />
         <Route path="annonces/nouvelle" element={<MerchantCreateHomeDeliveryAnnouncementPage />} />
+      </Route>
+
+      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+
+      <Route path="/admin/*" element={<AdminLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="livreurs" element={<AdminCouriersPage />} />
+        <Route path="livreurs/:courierId" element={<AdminCourierDetailPage />} />
+        <Route path="annonces" element={<AdminAnnouncementsDeliveriesPage />} />
+        <Route path="factures" element={<AdminInvoicesPage />} />
+        <Route path="notifications" element={<AdminNotificationsPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

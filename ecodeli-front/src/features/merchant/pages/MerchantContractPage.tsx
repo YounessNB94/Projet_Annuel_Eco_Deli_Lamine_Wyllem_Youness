@@ -1,12 +1,12 @@
-import { Box, Button, Alert, Skeleton, Stack, Typography } from '@mui/material';
-import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
-import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
-import { useMerchantContract } from '../hooks/useMerchantContract';
-import { ContractStatusCard } from '../components/ContractStatusCard';
-import { ContractDocumentCard } from '../components/ContractDocumentCard';
-import { ContractInfoList } from '../components/ContractInfoList';
-import type { MerchantContractDocument } from '../api/merchantContract';
-import { downloadMerchantContractPdf } from '../utils/downloadMerchantContractPdf';
+import { Box, Button, Alert, Skeleton, Stack, Typography } from "@mui/material";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
+import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import { useMerchantContract } from "../hooks/useMerchantContract";
+import { ContractStatusCard } from "../components/ContractStatusCard";
+import { ContractDocumentCard } from "../components/ContractDocumentCard";
+import { ContractInfoList } from "../components/ContractInfoList";
+import type { MerchantContractDocument } from "../api/merchantContract";
+import { downloadMerchantContractPdf } from "../utils/downloadMerchantContractPdf";
 
 export const MerchantContractPage = () => {
   const { data, isLoading, isError, refetch } = useMerchantContract();
@@ -22,7 +22,10 @@ export const MerchantContractPage = () => {
 
   if (isError || !data) {
     return (
-      <Alert severity="error" action={<Button onClick={() => refetch()}>Reessayer</Button>}>
+      <Alert
+        severity="error"
+        action={<Button onClick={() => refetch()}>Reessayer</Button>}
+      >
         Impossible de charger les informations du contrat.
       </Alert>
     );
@@ -34,28 +37,33 @@ export const MerchantContractPage = () => {
     try {
       await downloadMerchantContractPdf({ contract: data, document });
     } catch (error) {
-      console.error('Impossible de generer le PDF du contrat', error);
+      console.error("Impossible de generer le PDF du contrat", error);
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <Stack
-        direction={{ xs: 'column', md: 'row' }}
+        direction={{ xs: "column", md: "row" }}
         spacing={2}
         justifyContent="space-between"
-        alignItems={{ xs: 'flex-start', md: 'center' }}
+        alignItems={{ xs: "flex-start", md: "center" }}
       >
         <Box>
           <Typography variant="h4" component="h1" fontWeight={700} gutterBottom>
             Contrat commerçant
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Suivez l'etat de votre contrat et accedez a la version signee en un clic.
+            Suivez l'etat de votre contrat et accedez a la version signee en un
+            clic.
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} width={{ xs: '100%', md: 'auto' }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          width={{ xs: "100%", md: "auto" }}
+        >
           <Button
             variant="outlined"
             startIcon={<RefreshOutlinedIcon />}
@@ -81,8 +89,8 @@ export const MerchantContractPage = () => {
 
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
+          display: "flex",
+          flexDirection: { xs: "column", lg: "row" },
           gap: 3,
         }}
       >
@@ -92,11 +100,11 @@ export const MerchantContractPage = () => {
           </Typography>
           <Box
             sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                mb: 0,
-                }}
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              mb: 0,
+            }}
           >
             {data.documents.map((document) => (
               <ContractDocumentCard
@@ -110,14 +118,14 @@ export const MerchantContractPage = () => {
           </Box>
         </Box>
 
-        <Box sx={{ width: { xs: '100%', lg: 320 }, flexShrink: 0 }}>
+        <Box sx={{ width: { xs: "100%", lg: 320 }, flexShrink: 0 }}>
           <ContractInfoList
             title="Support commercant"
             items={[
-              { label: 'Entreprise', value: data.companyName },
-              { label: 'Identifiant contrat', value: data.id },
-              { label: 'Email support', value: data.supportEmail },
-              { label: 'Telephone', value: data.supportPhone },
+              { label: "Entreprise", value: data.companyName },
+              { label: "Identifiant contrat", value: data.id },
+              { label: "Email support", value: data.supportEmail },
+              { label: "Telephone", value: data.supportPhone },
             ]}
           />
         </Box>
