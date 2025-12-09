@@ -1,15 +1,32 @@
 package fr.ecodeli.web.resource;
 
-import fr.ecodeli.entity.*;
+import fr.ecodeli.entity.AppUser;
+import fr.ecodeli.entity.UserAddressId;
+import fr.ecodeli.mapper.AddressMapper;
+import fr.ecodeli.mapper.UserAddressMapper;
+import fr.ecodeli.mapper.UserMapper;
+import fr.ecodeli.mapper.UserProfileMapper;
 import fr.ecodeli.service.AddressService;
 import fr.ecodeli.service.AppUserService;
 import fr.ecodeli.service.UserAddressService;
 import fr.ecodeli.service.UserProfileService;
+import fr.ecodeli.web.dto.AddressDto;
+import fr.ecodeli.web.dto.UserAddressDto;
+import fr.ecodeli.web.dto.UserDto;
+import fr.ecodeli.web.dto.UserProfileDto;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
@@ -26,68 +43,86 @@ public class UserResource {
     private final UserProfileService userProfileService;
     private final AddressService addressService;
     private final UserAddressService userAddressService;
+    private final UserMapper userMapper;
+    private final UserProfileMapper userProfileMapper;
+    private final AddressMapper addressMapper;
+    private final UserAddressMapper userAddressMapper;
 
     @Inject
     public UserResource(SecurityIdentity identity,
                         AppUserService appUserService,
                         UserProfileService userProfileService,
                         AddressService addressService,
-                        UserAddressService userAddressService) {
+                        UserAddressService userAddressService,
+                        UserMapper userMapper,
+                        UserProfileMapper userProfileMapper,
+                        AddressMapper addressMapper,
+                        UserAddressMapper userAddressMapper) {
         this.identity = identity;
         this.appUserService = appUserService;
         this.userProfileService = userProfileService;
         this.addressService = addressService;
         this.userAddressService = userAddressService;
+        this.userMapper = userMapper;
+        this.userProfileMapper = userProfileMapper;
+        this.addressMapper = addressMapper;
+        this.userAddressMapper = userAddressMapper;
     }
 
-    @GET
-    @Path("/me")
-    public AppUser me() {
+    private AppUser currentUser() {
         return appUserService.findByEmail(identity.getPrincipal().getName())
                 .orElseThrow(NotFoundException::new);
     }
 
     @GET
+    @Path("/me")
+    public UserDto me() {
+        return userMapper.toDto(currentUser());
+    }
+
+    @GET
     @Path("/me/profile")
-    public UserProfile getProfile() {
-        return userProfileService.getRequired(me().getId());
+    public UserProfileDto getProfile() {
+        return userProfileMapper.toDto(userProfileService.getRequired(currentUser().getId()));
     }
 
     @PATCH
     @Path("/me/profile")
-    public UserProfile updateProfile(@Valid UserProfile payload) {
-        return userProfileService.saveForUser(me(), payload);
+    public UserProfileDto updateProfile(@Valid UserProfileDto payload) {
+        var saved = userProfileService.saveForUser(currentUser(), userProfileMapper.toEntity(payload));
+        return userProfileMapper.toDto(saved);
     }
 
     @GET
     @Path("/me/addresses")
-    public List<UserAddress> listAddresses() {
-        var user = me();
-        return userAddressService.listAll().stream()
-                .filter(ua -> ua.getUser().getId().equals(user.getId()))
-                .collect(Collectors.toList());
+    public List<UserAddressDto> listAddresses() {
+        var user = currentUser();
+        return userAddressService.listByUserId(user.getId()).stream()
+                .map(userAddressMapper::toDto)
+                .toList();
     }
 
     @POST
     @Path("/me/addresses")
-    public UserAddress createAddress(@Valid Address address) {
-        var user = me();
-        var created = addressService.create(address);
-        return userAddressService.linkAddress(user, created, false);
+    public UserAddressDto createAddress(@Valid AddressDto addressDto) {
+        var user = currentUser();
+        var created = addressService.create(addressMapper.toEntity(addressDto));
+        return userAddressMapper.toDto(userAddressService.linkAddress(user, created, false));
     }
 
     @PATCH
     @Path("/me/addresses/{addressId}")
-    public Address updateAddress(@PathParam("addressId") Long addressId, @Valid Address payload) {
-        var user = me();
+    public AddressDto updateAddress(@PathParam("addressId") Long addressId, @Valid AddressDto payload) {
+        var user = currentUser();
         userAddressService.ensureOwnership(user, addressId);
-        return addressService.update(addressId, payload);
+        var updated = addressService.update(addressId, addressMapper.toEntity(payload));
+        return addressMapper.toDto(updated);
     }
 
     @DELETE
     @Path("/me/addresses/{addressId}")
     public void deleteAddress(@PathParam("addressId") Long addressId) {
-        var user = me();
+        var user = currentUser();
         userAddressService.ensureOwnership(user, addressId);
         userAddressService.delete(new UserAddressId(user.getId(), addressId));
     }
