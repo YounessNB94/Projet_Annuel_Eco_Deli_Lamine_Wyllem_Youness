@@ -4,8 +4,11 @@ import fr.ecodeli.entity.UserAddress;
 import fr.ecodeli.web.dto.UserAddressDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 
-@Mapper(componentModel = "cdi", uses = AddressMapper.class)
+@Mapper(
+        componentModel = MappingConstants.ComponentModel.JAKARTA_CDI,
+        uses = AddressMapper.class)
 public interface UserAddressMapper {
 
     @Mapping(target = "userId", source = "user.id")

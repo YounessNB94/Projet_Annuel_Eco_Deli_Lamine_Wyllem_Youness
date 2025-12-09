@@ -18,14 +18,14 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+
+import lombok.*;
 
 @Getter
 @Setter
+@AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "app_user",
         indexes = {
@@ -64,6 +64,7 @@ public class AppUser {
     private UserProfile profile;
 
     @OneToMany(mappedBy = "user")
+    @Builder.Default
     private final List<UserAddress> addresses = new ArrayList<>();
 
     @PrePersist
