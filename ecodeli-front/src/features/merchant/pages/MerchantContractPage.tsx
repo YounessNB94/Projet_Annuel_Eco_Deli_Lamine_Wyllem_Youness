@@ -1,6 +1,5 @@
 import { Box, Button, Alert, Skeleton, Stack, Typography } from "@mui/material";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
-import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import { useMerchantContract } from "../hooks/useMerchantContract";
 import { ContractStatusCard } from "../components/ContractStatusCard";
 import { ContractDocumentCard } from "../components/ContractDocumentCard";
@@ -64,13 +63,6 @@ export const MerchantContractPage = () => {
           spacing={1.5}
           width={{ xs: "100%", md: "auto" }}
         >
-          <Button
-            variant="outlined"
-            startIcon={<RefreshOutlinedIcon />}
-            onClick={() => refetch()}
-          >
-            Rafraichir
-          </Button>
           {primaryDocument ? (
             <Button
               variant="contained"

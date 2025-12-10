@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   Box,
   Button,
@@ -29,12 +29,16 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import AddIcon from "@mui/icons-material/Add";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import type {
   Announcement,
   AnnouncementStatus,
 } from "../api/clientAnnouncements";
 import { useClientAnnouncements } from "../hooks/useClientAnnouncements";
 import { AnnouncementStatusChip } from "../components/AnnouncementStatusChip";
+import { ClientAnnouncementEditDialog } from "../components/ClientAnnouncementEditDialog";
+import type { AnnouncementFormValues } from "../types/announcementForm";
+import { applyFormValuesToAnnouncement } from "../utils/announcementFormMapping";
 
 const formatDate = (isoDate: string) =>
   new Date(isoDate).toLocaleDateString("fr-FR", {
@@ -45,6 +49,7 @@ const formatDate = (isoDate: string) =>
 
 export const ClientAnnouncementsPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data = [], isLoading } = useClientAnnouncements();
 
   const [search, setSearch] = useState("");
@@ -57,6 +62,9 @@ export const ClientAnnouncementsPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAnnouncementId, setSelectedAnnouncementId] = useState<
     string | null
+  >(null);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<
+    Announcement | null
   >(null);
 
   const itemsPerPage = 10;
@@ -118,10 +126,39 @@ export const ClientAnnouncementsPage = () => {
     navigate(`/client/annonces/${id}`);
   };
 
-  const handleEditAnnouncement = (id: string) => {
-    void id;
-    navigate('/client/annonces/nouvelle');
+  const handleEditAnnouncement = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
   };
+
+  const handleCloseEditDialog = () => {
+    setEditingAnnouncement(null);
+  };
+
+  const handleUpdateAnnouncement = useCallback(
+    (values: AnnouncementFormValues) => {
+      if (!editingAnnouncement) {
+        return;
+      }
+
+      const updated = applyFormValuesToAnnouncement(editingAnnouncement, values);
+
+      queryClient.setQueryData<Announcement[]>(
+        ["client", "announcements"],
+        (previous) => {
+          if (!previous) {
+            return previous;
+          }
+          return previous.map((item) =>
+            item.id === updated.id ? updated : item
+          );
+        }
+      );
+
+      console.info("Announcement updated", updated);
+      setEditingAnnouncement(null);
+    },
+    [editingAnnouncement, queryClient]
+  );
 
   const askDelete = (id: string) => {
     setSelectedAnnouncementId(id);
@@ -383,7 +420,7 @@ export const ClientAnnouncementsPage = () => {
                             <IconButton
                               size="small"
                               aria-label="Modifier"
-                              onClick={() => handleEditAnnouncement(a.id)}
+                              onClick={() => handleEditAnnouncement(a)}
                             >
                               <EditOutlinedIcon fontSize="small" />
                             </IconButton>
@@ -466,6 +503,13 @@ export const ClientAnnouncementsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ClientAnnouncementEditDialog
+        open={Boolean(editingAnnouncement)}
+        announcement={editingAnnouncement}
+        onClose={handleCloseEditDialog}
+        onSubmit={handleUpdateAnnouncement}
+      />
     </Box>
   );
 };

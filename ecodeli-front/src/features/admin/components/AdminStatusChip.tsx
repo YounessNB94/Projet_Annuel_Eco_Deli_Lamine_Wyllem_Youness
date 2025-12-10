@@ -15,7 +15,7 @@ import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
 import type { ReactNode } from 'react';
 
-const statusConfig = {
+export const adminStatusConfig = {
   pending: {
     label: 'En attente',
     color: 'warning' as const,
@@ -88,7 +88,7 @@ const statusConfig = {
   },
 };
 
-export type AdminStatus = keyof typeof statusConfig;
+export type AdminStatus = keyof typeof adminStatusConfig;
 
 interface AdminStatusChipProps {
   status: AdminStatus;
@@ -99,7 +99,7 @@ interface AdminStatusChipProps {
 }
 
 export const AdminStatusChip = ({ status, label, size = 'small', variant = 'filled', icon }: AdminStatusChipProps) => {
-  const config = statusConfig[status];
+  const config = adminStatusConfig[status];
 
   return (
     <Chip

@@ -7,7 +7,6 @@ import {
   Typography,
 } from '@mui/material';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
-import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 
 import { AdminStatCard } from '../components/AdminStatCard';
@@ -17,6 +16,8 @@ import { AdminStatusChip, type AdminStatus } from '../components/AdminStatusChip
 import { AdminFilterToolbar, type AdminFilterOption } from '../components/AdminFilterToolbar';
 import { AdminInfoList } from '../components/AdminInfoList';
 import { AdminActivityList, type AdminActivityItem } from '../components/AdminActivityList';
+import { downloadAdminInvoicePdf } from '../utils/downloadAdminInvoicePdf';
+import { exportAdminInvoiceReportCsv } from '../utils/exportAdminInvoiceReportCsv';
 
 const invoiceStats = [
   { label: 'Factures en attente', value: '12', helper: '8 échéances < 7 jours' },
@@ -25,8 +26,12 @@ const invoiceStats = [
   { label: 'Taux de litiges', value: '1,3%', helper: 'Objectif < 2%' },
 ];
 
-type InvoiceEntity = 'all' | 'merchant' | 'courier';
+type InvoiceEntity = 'merchant' | 'courier';
+type InvoiceEntityFilter = 'all' | InvoiceEntity;
 type InvoiceFilter = 'all' | AdminStatus;
+
+const normalizeText = (value: string) =>
+  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 interface InvoiceRow {
   id: string;
@@ -108,8 +113,7 @@ const statusFilters: AdminFilterOption<InvoiceFilter>[] = [
   { label: 'Payée', value: 'paid' },
   { label: 'Retard', value: 'overdue' },
 ];
-
-const entityFilters: AdminFilterOption<InvoiceEntity>[] = [
+const entityFilters: AdminFilterOption<InvoiceEntityFilter>[] = [
   { label: 'Tous profils', value: 'all' },
   { label: 'Commerçants', value: 'merchant' },
   { label: 'Livreurs', value: 'courier' },
@@ -137,7 +141,7 @@ const paymentActivity: AdminActivityItem[] = [
 ];
 
 const createInvoiceColumns = (
-  onDownload: (invoice: InvoiceRow) => void
+  onDownload: (invoice: InvoiceRow) => Promise<void> | void
 ): AdminTableColumn<InvoiceRow>[] => [
   {
     key: 'invoice',
@@ -200,7 +204,9 @@ const createInvoiceColumns = (
         size="small"
         variant="outlined"
         startIcon={<PictureAsPdfOutlinedIcon />}
-        onClick={() => onDownload(row)}
+        onClick={() => {
+          void onDownload(row);
+        }}
       >
         PDF
       </Button>
@@ -210,10 +216,23 @@ const createInvoiceColumns = (
 
 export const AdminInvoicesPage = () => {
   const [statusFilter, setStatusFilter] = useState<InvoiceFilter>('all');
-  const [entityFilter, setEntityFilter] = useState<InvoiceEntity>('all');
+  const [entityFilter, setEntityFilter] = useState<InvoiceEntityFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const handleInvoiceDownload = useCallback((invoice: InvoiceRow) => {
-    console.info('Download invoice PDF', invoice.id);
+  const handleInvoiceDownload = useCallback(async (invoice: InvoiceRow) => {
+    try {
+      await downloadAdminInvoicePdf({
+        id: invoice.id,
+        entity: invoice.entity,
+        counterpart: invoice.counterpart,
+        period: invoice.period,
+        amount: invoice.amount,
+        status: invoice.status,
+        issuedAt: invoice.issuedAt,
+        dueAt: invoice.dueAt,
+      });
+    } catch (error) {
+      console.error('Failed to download invoice PDF', error);
+    }
   }, []);
   const invoiceColumns = useMemo(() => createInvoiceColumns(handleInvoiceDownload), [handleInvoiceDownload]);
 
@@ -230,6 +249,47 @@ export const AdminInvoicesPage = () => {
     });
   }, [statusFilter, entityFilter, searchTerm]);
 
+  const currentPeriodLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' });
+    const formatted = formatter.format(new Date());
+    if (formatted.length === 0) {
+      return '';
+    }
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }, []);
+
+  const { reportInvoices, reportPeriodLabel } = useMemo(() => {
+    if (filteredInvoices.length === 0) {
+      return { reportInvoices: filteredInvoices, reportPeriodLabel: currentPeriodLabel };
+    }
+
+    const normalizedTarget = normalizeText(currentPeriodLabel);
+    if (normalizedTarget.length > 0) {
+      const matches = filteredInvoices.filter(
+        (invoice) => normalizeText(invoice.period) === normalizedTarget,
+      );
+      if (matches.length > 0) {
+        return { reportInvoices: matches, reportPeriodLabel: currentPeriodLabel };
+      }
+    }
+
+    const fallbackPeriod = filteredInvoices[0]?.period ?? currentPeriodLabel;
+    return { reportInvoices: filteredInvoices, reportPeriodLabel: fallbackPeriod };
+  }, [filteredInvoices, currentPeriodLabel]);
+
+  const handleMonthlyReportExport = useCallback(() => {
+    if (reportInvoices.length === 0) {
+      console.warn('No invoices available for monthly report export.');
+      return;
+    }
+
+    exportAdminInvoiceReportCsv({
+      invoices: reportInvoices,
+      periodLabel: reportPeriodLabel,
+      generatedAt: new Date(),
+    });
+  }, [reportInvoices, reportPeriodLabel]);
+
   return (
     <Stack spacing={3}>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
@@ -242,8 +302,15 @@ export const AdminInvoicesPage = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<FilterAltOutlinedIcon />}>Exporter la vue</Button>
-          <Button variant="contained" color="success" startIcon={<TrendingUpOutlinedIcon />}>Rapport mensuel</Button>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<TrendingUpOutlinedIcon />}
+            onClick={handleMonthlyReportExport}
+            disabled={reportInvoices.length === 0}
+          >
+            Rapport mensuel
+          </Button>
         </Stack>
       </Stack>
 
@@ -262,7 +329,6 @@ export const AdminInvoicesPage = () => {
       <AdminSectionCard
         title="Historique des factures"
         subtitle={`${filteredInvoices.length} lignes correspondent à vos filtres`}
-        action={<Button size="small">Configurer les relances</Button>}
       >
         <Stack spacing={2}>
           <AdminFilterToolbar

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
 
-export type UserRole = 'CLIENT' | 'COURIER' | 'MERCHANT' | 'ADMIN';
+export type UserRole = 'CLIENT' | 'COURIER' | 'MERCHANT' | 'PROVIDER' | 'ADMIN';
 
 export interface AuthUser {
   id: string;

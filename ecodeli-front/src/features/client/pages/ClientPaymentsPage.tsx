@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -8,7 +8,6 @@ import {
   Chip,
   CircularProgress,
   Divider,
-  Grid,
   IconButton,
   Radio,
   Stack,
@@ -21,23 +20,15 @@ import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { PaymentRequiredBanner } from '../components/payments/PaymentRequiredBanner';
 import { PaymentSummaryCard } from '../components/payments/PaymentSummaryCard';
 import { PaymentSecurityCard } from '../components/payments/PaymentSecurityCard';
 import { PaymentResultCard } from '../components/payments/PaymentResultCard';
 import { downloadPaymentInvoice } from '../utils/downloadPaymentInvoice';
-
-type PaymentStatus = 'pending' | 'processing' | 'success' | 'failed';
-
-const paymentData = {
-  deliveryId: 'DLV-001',
-  title: 'Livraison Paris → Lyon',
-  amount: 25,
-  serviceFee: 0,
-  total: 25,
-  dueDate: '8 Dec 2025',
-};
+import { useClientPaymentDetail } from '../hooks/useClientPaymentDetail';
+import type { ClientPaymentStatus } from '../api/clientPayments';
 
 interface CardFormState {
   cardNumber: string;
@@ -46,16 +37,22 @@ interface CardFormState {
   cardholder: string;
 }
 
+type PaymentStatus = ClientPaymentStatus;
+
 const statusMeta: Record<PaymentStatus, { label: string; color: ChipProps['color'] }> = {
-  pending: { label: 'À payer', color: 'warning' },
+  due: { label: 'A payer', color: 'warning' },
   processing: { label: 'Traitement', color: 'info' },
-  success: { label: 'Réussi', color: 'success' },
-  failed: { label: 'Échec', color: 'error' },
+  paid: { label: 'Payee', color: 'success' },
+  failed: { label: 'Echec', color: 'error' },
 };
 
 export const ClientPaymentsPage = () => {
   const navigate = useNavigate();
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('pending');
+  const queryClient = useQueryClient();
+  const { paymentId } = useParams<{ paymentId: string }>();
+  const { data: paymentDetail, isLoading } = useClientPaymentDetail(paymentId);
+
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('due');
   const [paymentMethod, setPaymentMethod] = useState<'card'>('card');
   const [cardForm, setCardForm] = useState<CardFormState>({
     cardNumber: '',
@@ -66,47 +63,108 @@ export const ClientPaymentsPage = () => {
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [paymentDate, setPaymentDate] = useState<Date | null>(null);
 
+  useEffect(() => {
+    if (!paymentDetail) {
+      return;
+    }
+    setPaymentStatus(paymentDetail.status);
+    if (paymentDetail.status === 'paid') {
+      setTransactionId((prev) => prev ?? `TRX-${paymentDetail.id.slice(-6)}`);
+      setPaymentDate((prev) => prev ?? new Date(paymentDetail.dueDate));
+    }
+  }, [paymentDetail]);
+
   const handleCardFieldChange = (field: keyof CardFormState) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setCardForm((prev) => ({ ...prev, [field]: event.target.value }));
   };
 
   const handlePayment = () => {
-    if (paymentStatus === 'processing') return;
+    if (!paymentDetail || paymentStatus === 'processing' || paymentStatus === 'paid') {
+      return;
+    }
     setPaymentStatus('processing');
     setTimeout(() => {
-      const succeeded = Math.random() >= 0.3;
-      if (succeeded) {
-        setPaymentStatus('success');
-        setTransactionId(`TRX-${Date.now().toString().slice(-8)}`);
-        setPaymentDate(new Date());
-      } else {
-        setPaymentStatus('failed');
-        setTransactionId(null);
-        setPaymentDate(null);
-      }
+      setPaymentStatus('paid');
+      const nextTransactionId = `TRX-${Date.now().toString().slice(-8)}`;
+      setTransactionId(nextTransactionId);
+      setPaymentDate(new Date());
+
+      queryClient.setQueryData(['client', 'payments', paymentId], (prev: unknown) => {
+        if (prev && typeof prev === 'object') {
+          return { ...(prev as Record<string, unknown>), status: 'paid' };
+        }
+        return prev;
+      });
+
+      queryClient.setQueryData(['client', 'payments'], (prev: unknown) => {
+        if (Array.isArray(prev)) {
+          return prev.map((payment) =>
+            payment && typeof payment === 'object' && 'id' in payment && payment.id === paymentId
+              ? { ...payment, status: 'paid' }
+              : payment,
+          );
+        }
+        return prev;
+      });
     }, 1800);
   };
 
   const handleRetry = () => {
-    setPaymentStatus('pending');
+    setPaymentStatus('due');
+    setTransactionId(null);
+    setPaymentDate(null);
   };
 
   const handleDownloadInvoice = () => {
+    if (!paymentDetail) {
+      return;
+    }
     const invoiceTransactionId = transactionId ?? `TRX-${Date.now().toString().slice(-8)}`;
     downloadPaymentInvoice({
-      deliveryId: paymentData.deliveryId,
-      deliveryTitle: paymentData.title,
-      amount: paymentData.amount,
-      serviceFee: paymentData.serviceFee,
-      total: paymentData.total,
+      deliveryId: paymentDetail.id,
+      deliveryTitle: paymentDetail.deliveryTitle,
+      amount: paymentDetail.amount,
+      serviceFee: paymentDetail.serviceFee,
+      total: paymentDetail.total,
       transactionId: invoiceTransactionId,
       paymentDate: paymentDate ?? new Date(),
       cardholder: cardForm.cardholder || 'Client EcoDeli',
     });
   };
 
-  const handleBack = () => navigate('/client/livraisons');
+  const handleBack = () => navigate('/client/paiements');
   const handleReturnDashboard = () => navigate('/client/dashboard');
+
+  if (!paymentId) {
+    return <Navigate to="/client/paiements" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <Box sx={{ py: 6, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Chargement du paiement...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!paymentDetail) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h5" gutterBottom>
+          Paiement introuvable
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Le paiement demande n'existe pas ou n'est plus disponible.
+        </Typography>
+        <Button variant="contained" onClick={handleBack}>
+          Retour a mes paiements
+        </Button>
+      </Box>
+    );
+  }
 
   const header = (
     <Box
@@ -126,14 +184,14 @@ export const ClientPaymentsPage = () => {
           Paiement
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
-          Livraison #{paymentData.deliveryId}
+          Livraison {paymentDetail.deliveryTitle}
         </Typography>
       </Box>
       <Chip label={statusMeta[paymentStatus].label} color={statusMeta[paymentStatus].color} />
     </Box>
   );
 
-  if (paymentStatus === 'success') {
+  if (paymentStatus === 'paid') {
     return (
       <Box>
         {header}
@@ -141,7 +199,7 @@ export const ClientPaymentsPage = () => {
           <PaymentResultCard
             status="success"
             title="Paiement réussi !"
-            description={`Votre paiement de ${paymentData.total.toFixed(2)} € a été traité avec succès.`}
+            description={`Votre paiement de ${paymentDetail.total.toFixed(2)} € a été traite avec succes.`}
           >
             <Box
               sx={{
@@ -176,13 +234,13 @@ export const ClientPaymentsPage = () => {
                   <Typography variant="body2" color="text.secondary">
                     Livraison
                   </Typography>
-                  <Typography variant="body2">{paymentData.title}</Typography>
+                  <Typography variant="body2">{paymentDetail.deliveryTitle}</Typography>
                 </Box>
                 <Divider />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body1">Montant total</Typography>
                   <Typography variant="body1" color="success.main" fontWeight={700}>
-                    {paymentData.total.toFixed(2)} €
+                    {paymentDetail.total.toFixed(2)} €
                   </Typography>
                 </Box>
               </Stack>
@@ -242,17 +300,29 @@ export const ClientPaymentsPage = () => {
   }
 
   const primaryActionLabel = useMemo(
-    () => (paymentStatus === 'processing' ? 'Traitement en cours...' : `Payer ${paymentData.total.toFixed(2)} €`),
-    [paymentStatus]
+    () =>
+      paymentStatus === 'processing'
+        ? 'Traitement en cours...'
+        : paymentStatus === 'paid'
+          ? 'Paiement effectue'
+          : `Payer ${paymentDetail.total.toFixed(2)} €`,
+    [paymentStatus, paymentDetail.total]
   );
 
   return (
     <Box>
       {header}
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 2fr) minmax(0, 1fr)' },
+          alignItems: 'start',
+        }}
+      >
+        <Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <PaymentRequiredBanner dueDate={paymentData.dueDate} />
+            <PaymentRequiredBanner dueDate={new Date(paymentDetail.dueDate).toLocaleDateString('fr-FR')} />
 
             <Card
               elevation={0}
@@ -385,20 +455,20 @@ export const ClientPaymentsPage = () => {
               {primaryActionLabel}
             </Button>
           </Box>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} lg={4}>
+        <Box>
           <Box sx={{ position: { lg: 'sticky' }, top: { lg: 96 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <PaymentSummaryCard
-              deliveryTitle={paymentData.title}
-              amount={paymentData.amount}
-              serviceFee={paymentData.serviceFee}
-              total={paymentData.total}
+              deliveryTitle={paymentDetail.deliveryTitle}
+              amount={paymentDetail.amount}
+              serviceFee={paymentDetail.serviceFee}
+              total={paymentDetail.total}
             />
             <PaymentSecurityCard />
           </Box>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

@@ -8,7 +8,7 @@ import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 
 const navigationItems = [
-  { label: 'Dashboard', path: '/admin/dashboard', icon: <DashboardOutlinedIcon fontSize="small" /> },
+  { label: 'Tableau de bord', path: '/admin/dashboard', icon: <DashboardOutlinedIcon fontSize="small" /> },
   { label: 'Livreurs', path: '/admin/livreurs', icon: <PeopleAltOutlinedIcon fontSize="small" /> },
   { label: 'Annonces & Livraisons', path: '/admin/annonces', icon: <LocalShippingOutlinedIcon fontSize="small" /> },
   { label: 'Factures', path: '/admin/factures', icon: <ReceiptLongOutlinedIcon fontSize="small" /> },

@@ -6,6 +6,7 @@ export type AnnouncementType =
   | 'PALLET';
 
 export interface AnnouncementFormValues {
+  [key: string]: string;
   type: AnnouncementType | '';
   fromAddress: string;
   toAddress: string;

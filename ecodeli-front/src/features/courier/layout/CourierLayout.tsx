@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
-import HistoryEduOutlinedIcon from '@mui/icons-material/HistoryEduOutlined';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 
 const navigationItems = [
   {
@@ -15,12 +15,11 @@ const navigationItems = [
     path: '/courier/livraisons',
     icon: <LocalShippingOutlinedIcon fontSize="small" />,
   },
-//   {
-//     label: 'Historique',
-//     path: '/courier/historique',
-//     icon: <HistoryEduOutlinedIcon fontSize="small" />,
-//     disabled: true,
-//   },
+  {
+    label: 'Notifications',
+    path: '/courier/notifications',
+    icon: <NotificationsNoneOutlinedIcon fontSize="small" />,
+  },
 ];
 
 export const CourierLayout = () => {

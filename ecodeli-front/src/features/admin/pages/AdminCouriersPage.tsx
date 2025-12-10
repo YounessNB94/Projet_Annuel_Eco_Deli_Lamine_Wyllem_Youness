@@ -9,8 +9,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 
 import { AdminStatCard } from "../components/AdminStatCard";
@@ -239,11 +237,7 @@ const buildCourierColumns = (
     label: "",
     align: "right",
     render: (courier) => (
-      <Button
-        size="small"
-        variant="text"
-        onClick={() => onOpenDetail(courier)}
-      >
+      <Button size="small" variant="text" onClick={() => onOpenDetail(courier)}>
         Voir dossier
       </Button>
     ),
@@ -255,7 +249,10 @@ export const AdminCouriersPage = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const courierColumns = useMemo(
-    () => buildCourierColumns((courier) => navigate(`/admin/livreurs/${courier.id}`)),
+    () =>
+      buildCourierColumns((courier) =>
+        navigate(`/admin/livreurs/${courier.id}`)
+      ),
     [navigate]
   );
 
@@ -290,22 +287,6 @@ export const AdminCouriersPage = () => {
             validation.
           </Typography>
         </Box>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
-          width={{ xs: "100%", md: "auto" }}
-        >
-          <Button variant="outlined" startIcon={<FilterListIcon />}>
-            Exporter le filtre
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<CloudDownloadOutlinedIcon />}
-            color="success"
-          >
-            Exporter CSV
-          </Button>
-        </Stack>
       </Stack>
 
       <Box
@@ -323,7 +304,6 @@ export const AdminCouriersPage = () => {
       <AdminSectionCard
         title="Pipeline de validation"
         subtitle={`${filteredCouriers.length} dossiers correspondent à vos filtres`}
-        action={<Button size="small">Configurer les étapes</Button>}
       >
         <Stack spacing={2}>
           <AdminFilterToolbar

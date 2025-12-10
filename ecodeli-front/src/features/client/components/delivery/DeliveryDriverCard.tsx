@@ -1,7 +1,6 @@
 import {
   Avatar,
   Box,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -64,11 +63,6 @@ export const DeliveryDriverCard = ({ driver }: Props) => (
           <Typography variant="body2">{driver.vehicle}</Typography>
         </Box>
       </Box>
-
-      <Button variant="outlined" fullWidth>
-        <PhoneIphoneOutlinedIcon fontSize="small" sx={{ mr: 1 }} />
-        Contacter le livreur
-      </Button>
     </CardContent>
   </Card>
 );

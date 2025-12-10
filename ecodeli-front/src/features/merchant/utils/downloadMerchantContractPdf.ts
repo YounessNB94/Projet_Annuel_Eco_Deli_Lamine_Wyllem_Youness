@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
-import ecoDeliLogoUrl from '../../../assets/EcoDeli-Logo.svg?url';
 import type { MerchantContract, MerchantContractDocument } from '../api/merchantContract';
+import { drawEcoDeliLogo } from '../../shared/utils/ecoDeliLogo';
 
 interface DownloadMerchantContractPdfParams {
   contract: MerchantContract;
@@ -13,60 +13,9 @@ const documentTypeLabel: Record<MerchantContractDocument['type'], string> = {
   POLICY: 'Politique',
 };
 
-let logoDataUrlPromise: Promise<string> | null = null;
-
-const loadLogoAsPngDataUrl = () =>
-  new Promise<string>((resolve, reject) => {
-    if (typeof document === 'undefined') {
-      reject(new Error('Impossible de charger le logo EcoDeli hors navigateur.'));
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const context = canvas.getContext('2d');
-
-      if (!context) {
-        reject(new Error('Contexte canvas indisponible pour le logo EcoDeli.'));
-        return;
-      }
-
-      context.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.onerror = () => reject(new Error('Impossible de charger le logo EcoDeli.'));
-    img.src = ecoDeliLogoUrl;
-  });
-
-const getLogoDataUrl = () => {
-  if (!logoDataUrlPromise) {
-    logoDataUrlPromise = loadLogoAsPngDataUrl();
-  }
-  return logoDataUrlPromise;
-};
-
-const drawEcoDeliLogo = async (pdf: jsPDF) => {
-  const logoX = 20;
-  const logoY = 14;
-  const logoWidth = 24;
-  const logoHeight = 24;
-
-  try {
-    const logoDataUrl = await getLogoDataUrl();
-    pdf.addImage(logoDataUrl, 'PNG', logoX, logoY, logoWidth, logoHeight);
-  } catch (error) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(47, 127, 51);
-    pdf.text('EcoDeli', logoX, logoY + logoHeight - 6);
-  }
-
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'normal');
-  return logoY + logoHeight;
+const setFontStyle = (pdf: jsPDF, style: 'normal' | 'bold' | 'italic' | 'bolditalic') => {
+  const { fontName } = pdf.getFont();
+  pdf.setFont(fontName || 'helvetica', style);
 };
 
 export const downloadMerchantContractPdf = async ({ contract, document }: DownloadMerchantContractPdfParams) => {
@@ -93,15 +42,10 @@ export const downloadMerchantContractPdf = async ({ contract, document }: Downlo
     cursorY += infoLineSpacing;
   });
 
-  cursorY += 4;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, cursorY, 190, cursorY);
-  cursorY += 14;
-
   doc.setFontSize(14);
-  doc.setFont(undefined, 'bold');
+  setFontStyle(doc, 'bold');
   doc.text('Document sélectionné', 20, cursorY);
-  doc.setFont(undefined, 'normal');
+  setFontStyle(doc, 'normal');
   doc.setFontSize(12);
   cursorY += 10;
 
@@ -119,21 +63,17 @@ export const downloadMerchantContractPdf = async ({ contract, document }: Downlo
   details.forEach(([label, value]) => {
     const lines = doc.splitTextToSize(value, valueWidth);
     doc.text(`${label}:`, 20, y);
-    lines.forEach((line, index) => {
-      doc.text(line, 60, y + index * lineSpacing);
+    lines.forEach((lineText: string, index: number) => {
+      const lineY = y + lineSpacing * index;
+      doc.text(lineText, 60, lineY);
     });
     y += lineSpacing * lines.length + 4;
   });
 
-  doc.setFont(undefined, 'italic');
+  setFontStyle(doc, 'italic');
   doc.text('Document généré automatiquement depuis votre espace EcoDeli.', 20, y + 6);
 
   const signatureSectionTop = y + 30;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Signature commerçant', 20, signatureSectionTop);
-  doc.setDrawColor(120, 120, 120);
-  doc.line(20, signatureSectionTop + 18, 90, signatureSectionTop + 18);
-  doc.setFont('courier', 'italic');
   doc.setFontSize(14);
   doc.text('J. Exemple', 22, signatureSectionTop + 14);
   doc.setFont('helvetica', 'normal');

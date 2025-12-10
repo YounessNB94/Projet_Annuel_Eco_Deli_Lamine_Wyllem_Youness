@@ -3,6 +3,7 @@ import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } fro
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 
 const navigationItems = [
   {
@@ -19,6 +20,11 @@ const navigationItems = [
     label: 'Mes annonces',
     path: '/merchant/annonces',
     icon: <ListAltOutlinedIcon fontSize="small" />,
+  },
+  {
+    label: 'Notifications',
+    path: '/merchant/notifications',
+    icon: <NotificationsNoneOutlinedIcon fontSize="small" />,
   },
 ];
 

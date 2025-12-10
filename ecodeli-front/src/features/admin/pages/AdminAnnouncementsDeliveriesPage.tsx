@@ -1,15 +1,7 @@
 import { useMemo, useState } from 'react';
-import {
-  Avatar,
-  Box,
-  Button,
-  Chip,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Avatar, Box, Button, Chip, Snackbar, Stack, Typography } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 
@@ -20,6 +12,8 @@ import { AdminStatusChip, type AdminStatus } from '../components/AdminStatusChip
 import { AdminFilterToolbar, type AdminFilterOption } from '../components/AdminFilterToolbar';
 import { AdminInfoList } from '../components/AdminInfoList';
 import { AdminActivityList, type AdminActivityItem } from '../components/AdminActivityList';
+import { AdminCreateCampaignDialog, type CreateCampaignPayload } from '../components/AdminCreateCampaignDialog';
+import { exportAdminFlowsCsv } from '../utils/exportAdminFlowsCsv';
 
 const overviewStats = [
   { label: 'Campagnes actives', value: 12, helper: '4 en préparation' },
@@ -220,7 +214,7 @@ const flowColumns: AdminTableColumn<FlowRow>[] = [
     key: 'actions',
     label: '',
     align: 'right',
-    render: (row) => (
+    render: (_row) => (
       <Button size="small" variant="text">
         Ouvrir
       </Button>
@@ -229,13 +223,16 @@ const flowColumns: AdminTableColumn<FlowRow>[] = [
 ];
 
 export const AdminAnnouncementsDeliveriesPage = () => {
+  const [rows, setRows] = useState<FlowRow[]>(flowRows);
   const [typeFilter, setTypeFilter] = useState<FlowTypeFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [openCreate, setOpenCreate] = useState(false);
+  const [createdSnack, setCreatedSnack] = useState<string | null>(null);
 
   const filteredRows = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();
-    return flowRows.filter((row) => {
+    return rows.filter((row) => {
       const matchType = typeFilter === 'all' || row.type === typeFilter;
       const matchStatus = statusFilter === 'all' || row.status === statusFilter;
       const matchSearch =
@@ -245,9 +242,66 @@ export const AdminAnnouncementsDeliveriesPage = () => {
         row.merchant.toLowerCase().includes(normalized);
       return matchType && matchStatus && matchSearch;
     });
-  }, [typeFilter, statusFilter, searchTerm]);
+  }, [rows, typeFilter, statusFilter, searchTerm]);
+
+  const handleCreateCampaign = (payload: CreateCampaignPayload) => {
+    const idPrefix = payload.type === 'delivery' ? 'DLV' : 'ANN';
+    const idRand = Math.floor(Math.random() * 9000) + 1000;
+    const id = `${idPrefix}-${idRand}`;
+    const windowLabel = `${payload.date} • ${payload.slot}`;
+    const newRow: FlowRow = {
+      id,
+      type: payload.type,
+      title: payload.title,
+      merchant: payload.merchant,
+      zone: payload.zones,
+      window: windowLabel,
+      status: 'scheduled',
+      volume: `${payload.volume} colis`,
+      couriers: Number(payload.couriers),
+    };
+
+    setRows((prev) => [newRow, ...prev]);
+    setOpenCreate(false);
+    setCreatedSnack(`Campagne ${id} créée`);
+    // Log extended planning params for future backend wiring
+    console.info('New campaign (admin)', {
+      id,
+      type: payload.type,
+      title: payload.title,
+      merchant: payload.merchant,
+      zones: payload.zones,
+      window: windowLabel,
+      volume: payload.volume,
+      couriers: payload.couriers,
+      slaTargetMin: payload.slaTargetMin,
+    });
+  };
+
+  const handleExport = () => {
+    if (filteredRows.length === 0) {
+      return;
+    }
+
+    const fileName = `campagnes-${new Date().toISOString().split('T')[0]}.csv`;
+    exportAdminFlowsCsv(
+      filteredRows.map((row) => ({
+        id: row.id,
+        type: row.type,
+        title: row.title,
+        merchant: row.merchant,
+        zone: row.zone,
+        window: row.window,
+        status: row.status,
+        volume: row.volume,
+        couriers: row.couriers,
+      })),
+      fileName,
+    );
+  };
 
   return (
+    <>
     <Stack spacing={3}>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
         <Box>
@@ -259,8 +313,22 @@ export const AdminAnnouncementsDeliveriesPage = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<FileDownloadOutlinedIcon />}>Exporter</Button>
-          <Button variant="contained" color="success" startIcon={<AddOutlinedIcon />}>Nouvelle campagne</Button>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadOutlinedIcon />}
+            onClick={handleExport}
+            disabled={filteredRows.length === 0}
+          >
+            Exporter
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => setOpenCreate(true)}
+          >
+            Nouvelle campagne
+          </Button>
         </Stack>
       </Stack>
 
@@ -276,7 +344,7 @@ export const AdminAnnouncementsDeliveriesPage = () => {
         ))}
       </Box>
 
-      <AdminSectionCard title="Flux actifs" subtitle={`${filteredRows.length} lignes correspondent à vos filtres`} action={<Button size="small" startIcon={<TuneOutlinedIcon />}>Configurer les alertes</Button>}>
+      <AdminSectionCard title="Flux actifs" subtitle={`${filteredRows.length} lignes correspondent à vos filtres`}>
         <Stack spacing={2}>
           <AdminFilterToolbar
             filters={statusFilters}
@@ -321,5 +389,20 @@ export const AdminAnnouncementsDeliveriesPage = () => {
         </AdminSectionCard>
       </Box>
     </Stack>
+
+    <AdminCreateCampaignDialog
+      open={openCreate}
+      onClose={() => setOpenCreate(false)}
+      onCreate={handleCreateCampaign}
+    />
+
+    <Snackbar
+      open={!!createdSnack}
+      autoHideDuration={3000}
+      onClose={() => setCreatedSnack(null)}
+      message={createdSnack ?? ''}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    />
+    </>
   );
 };
