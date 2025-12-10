@@ -172,4 +172,9 @@ public class DocumentService {
                     "Document content unavailable");
         }
     }
+
+    public DocumentDownload openDownload(Long documentId, Long userId) {
+        var document = requireAccess(documentId, userId);
+        return new DocumentDownload(document, openStream(document));
+    }
 }

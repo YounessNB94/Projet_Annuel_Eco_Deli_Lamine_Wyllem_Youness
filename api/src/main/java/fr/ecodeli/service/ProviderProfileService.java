@@ -9,12 +9,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
 public class ProviderProfileService {
 
     private final ProviderProfileRepository repository;
+    private static final String DEFAULT_REJECTION_REASON = "Invalid document";
 
     @Inject
     public ProviderProfileService(ProviderProfileRepository repository) {
@@ -23,6 +26,16 @@ public class ProviderProfileService {
 
     public Optional<ProviderProfile> findByUserId(Long userId) {
         return repository.findByIdOptional(userId);
+    }
+
+    public List<ProviderProfile> listForAdmin(ValidationStatus status, boolean pendingOnly) {
+        if (pendingOnly) {
+            return repository.list("status", ValidationStatus.PENDING);
+        }
+        if (status != null) {
+            return repository.list("status", status);
+        }
+        return repository.listAll();
     }
 
     public ProviderProfile getRequired(Long userId) {
@@ -54,8 +67,31 @@ public class ProviderProfileService {
             profile.setStatus(ValidationStatus.PENDING);
             profile.setValidatedAt(null);
             profile.setValidatedByAdminId(null);
+            profile.setRejectionReason(null);
         }
         return profile;
     }
-}
 
+    @Transactional
+    public ProviderProfile reviewProfile(AppUser admin, Long providerUserId, ValidationStatus decision, String reason) {
+        if (decision == ValidationStatus.PENDING) {
+            throw new EcodeliException(Response.Status.BAD_REQUEST,
+                    "PROVIDER_PROFILE_INVALID_DECISION",
+                    "Impossible de repasser un profil en attente");
+        }
+        var profile = getRequired(providerUserId);
+        profile.setStatus(decision);
+        profile.setValidatedAt(OffsetDateTime.now());
+        profile.setValidatedByAdminId(admin.getId());
+        if (decision == ValidationStatus.APPROVED) {
+            profile.setRejectionReason(null);
+        } else {
+            profile.setRejectionReason(resolveReason(reason));
+        }
+        return profile;
+    }
+
+    private String resolveReason(String reason) {
+        return (reason == null || reason.isBlank()) ? DEFAULT_REJECTION_REASON : reason;
+    }
+}

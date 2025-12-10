@@ -55,6 +55,9 @@ public class ProviderAttachment {
     @Column(name = "reviewed_by_admin_id")
     private Long reviewedByAdminId;
 
+    @Column(name = "rejection_reason", length = 512)
+    private String rejectionReason;
+
     @PrePersist
     void onPersist() {
         if (submittedAt == null) {

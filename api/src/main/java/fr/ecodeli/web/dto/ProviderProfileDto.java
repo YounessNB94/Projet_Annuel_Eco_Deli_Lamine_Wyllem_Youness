@@ -17,6 +17,7 @@ public record ProviderProfileDto(
         @Size(max = 3) String currency,
         @Size(max = 34) String ibanMasked,
         OffsetDateTime validatedAt,
-        Long validatedByAdminId
+        Long validatedByAdminId,
+        String rejectionReason
 ) {
 }

@@ -10,16 +10,21 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @ApplicationScoped
 public class ProviderAttachmentService {
 
     private final ProviderAttachmentRepository repository;
+    private final DocumentService documentService;
+    private static final String DEFAULT_REJECTION_REASON = "Invalid document";
 
     @Inject
-    public ProviderAttachmentService(ProviderAttachmentRepository repository) {
+    public ProviderAttachmentService(ProviderAttachmentRepository repository,
+                                     DocumentService documentService) {
         this.repository = repository;
+        this.documentService = documentService;
     }
 
     public List<ProviderAttachment> listForUser(Long userId) {
@@ -30,6 +35,16 @@ public class ProviderAttachmentService {
         return repository.findByIdOptional(id).orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
                 "PROVIDER_ATTACHMENT_NOT_FOUND",
                 "Pièce introuvable"));
+    }
+
+    public List<ProviderAttachment> listForAdmin(ValidationStatus status, boolean pendingOnly) {
+        if (pendingOnly) {
+            return repository.list("status", ValidationStatus.PENDING);
+        }
+        if (status != null) {
+            return repository.list("status", status);
+        }
+        return repository.listAll();
     }
 
     @Transactional
@@ -47,6 +62,30 @@ public class ProviderAttachmentService {
         repository.delete(attachment);
     }
 
+    @Transactional
+    public ProviderAttachment review(AppUser admin, Long attachmentId, ValidationStatus decision, String reason) {
+        if (decision == ValidationStatus.PENDING) {
+            throw new EcodeliException(Response.Status.BAD_REQUEST,
+                    "PROVIDER_ATTACHMENT_INVALID_DECISION",
+                    "Impossible de repasser une pièce en attente");
+        }
+        var attachment = getRequired(attachmentId);
+        attachment.setStatus(decision);
+        attachment.setReviewedAt(OffsetDateTime.now());
+        attachment.setReviewedByAdminId(admin.getId());
+        if (decision == ValidationStatus.APPROVED) {
+            attachment.setRejectionReason(null);
+        } else {
+            attachment.setRejectionReason(resolveReason(reason));
+        }
+        return attachment;
+    }
+
+    public DocumentDownload openDocumentForAdmin(Long attachmentId, AppUser admin) {
+        var attachment = getRequired(attachmentId);
+        return documentService.openDownload(attachment.getDocument().getId(), attachment.getProvider().getId());
+    }
+
     public void ensureOwnership(AppUser user, ProviderAttachment attachment) {
         if (!attachment.getProvider().getId().equals(user.getId())) {
             throw new EcodeliException(Response.Status.FORBIDDEN,
@@ -54,5 +93,8 @@ public class ProviderAttachmentService {
                     "Pièce non accessible");
         }
     }
-}
 
+    private String resolveReason(String reason) {
+        return (reason == null || reason.isBlank()) ? DEFAULT_REJECTION_REASON : reason;
+    }
+}

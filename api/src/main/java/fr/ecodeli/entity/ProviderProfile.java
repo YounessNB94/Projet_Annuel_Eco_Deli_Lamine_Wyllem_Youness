@@ -41,6 +41,9 @@ public class ProviderProfile {
     @Column(name = "validated_by_admin_id")
     private Long validatedByAdminId;
 
+    @Column(name = "rejection_reason", length = 512)
+    private String rejectionReason;
+
     @Column(length = 500)
     private String bio;
 
