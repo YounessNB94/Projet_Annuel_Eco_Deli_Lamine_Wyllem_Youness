@@ -2,17 +2,17 @@
 -- Seed data : le schéma est géré via Hibernate ORM.
 
 INSERT INTO app_user (id, keycloak_user_id, email, phone, status, created_at, updated_at)
-VALUES (1, 'kc-admin-001', 'admin@ecodeli.local', NULL, 'ACTIVE', now(), now()),
-       (2, 'kc-client-001', 'client@ecodeli.local', '0600000002', 'ACTIVE', now(), now()),
-       (3, 'kc-courier-001', 'livreur@ecodeli.local', '0600000003', 'ACTIVE', now(), now()),
-       (4, 'kc-merchant-001', 'merchant@ecodeli.local', '0600000004', 'ACTIVE', now(), now())
+VALUES (10001, 'kc-admin-001', 'admin@ecodeli.local', NULL, 'ACTIVE', now(), now()),
+       (10002, 'kc-client-001', 'client@ecodeli.local', '0600000002', 'ACTIVE', now(), now()),
+       (10003, 'kc-courier-001', 'livreur@ecodeli.local', '0600000003', 'ACTIVE', now(), now()),
+       (10004, 'kc-merchant-001', 'merchant@ecodeli.local', '0600000004', 'ACTIVE', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_profile (user_id, first_name, last_name, birth_date, default_language, tutorial_shown_at, tutorial_completed_at)
-VALUES (1, 'Ada', 'Admin', '1990-01-01', 'fr', now(), now()),
-       (2, 'Clara', 'Client', '1998-05-12', 'fr', now(), now()),
-       (3, 'Liam', 'Livreur', '1995-09-20', 'fr', now(), NULL),
-       (4, 'Max', 'Marchand', '1988-03-03', 'fr', now(), now())
+VALUES (10001, 'Ada', 'Admin', '1990-01-01', 'fr', now(), now()),
+       (10002, 'Clara', 'Client', '1998-05-12', 'fr', now(), now()),
+       (10003, 'Liam', 'Livreur', '1995-09-20', 'fr', now(), NULL),
+       (10004, 'Max', 'Marchand', '1988-03-03', 'fr', now(), now())
 ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO address (id, label, line1, line2, postal_code, city, country_code, latitude, longitude)
@@ -21,11 +21,11 @@ VALUES (101, 'Départ', '10 Rue de Paris', NULL, '75001', 'Paris', 'FR', 48.8566
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_address (user_id, address_id, is_default)
-VALUES (2, 101, true)
+VALUES (10002, 101, true)
 ON CONFLICT (user_id, address_id) DO NOTHING;
 
 INSERT INTO user_device (id, user_id, onesignal_player_id, platform, created_at)
-VALUES (1001, 2, 'onesignal-player-client-001', 'web', now())
+VALUES (1001, 10002, 'onesignal-player-client-001', 'web', now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO document (id, storage_key, file_name, mime_type, size_bytes, sha256, type, created_at)
@@ -35,21 +35,22 @@ VALUES (201, 'courier/id_livreur_001.pdf', 'id_livreur_001.pdf', 'application/pd
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO document_access (document_id, user_id, can_read)
-VALUES (201, 3, true),
-       (202, 4, true),
-       (203, 2, true)
+VALUES (201, 10003, true),
+       (202, 10004, true),
+       (203, 10002, true)
 ON CONFLICT (document_id, user_id) DO NOTHING;
 
 INSERT INTO courier_profile (user_id, status, validated_at, vehicle_type, max_weight_kg, iban_masked)
-VALUES (3, 'APPROVED', now(), 'CAR', 50.0, 'FR76 **** **** **** **** **** 123')
+VALUES (10003, 'APPROVED', now(), 'CAR', 50.0,
+        'FR76 **** **** **** **** **** 123')
 ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO courier_document (id, courier_user_id, type, document_id, status, reviewed_at, reviewed_by_admin_id)
-VALUES (301, 3, 'ID', 201, 'APPROVED', now(), 1)
+VALUES (301, 10003, 'ID', 201, 'APPROVED', now(), 1)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO merchant_company (id, merchant_user_id, name, siret, vat_number, billing_email, created_at)
-VALUES (401, 4, 'Marchand Demo', '12345678901234', 'FR123456789', 'billing@merchant.local', now())
+VALUES (401, 10004, 'Marchand Demo', '12345678901234', 'FR123456789', 'billing@merchant.local', now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO merchant_contract (id, merchant_company_id, status, start_date, end_date, terms_pdf_document_id, created_at)

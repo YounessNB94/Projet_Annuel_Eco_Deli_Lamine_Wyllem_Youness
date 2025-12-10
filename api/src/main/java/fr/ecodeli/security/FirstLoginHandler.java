@@ -5,6 +5,7 @@ import fr.ecodeli.entity.AppUserStatus;
 import fr.ecodeli.entity.UserProfile;
 import fr.ecodeli.service.AppUserService;
 import fr.ecodeli.service.UserProfileService;
+import io.quarkus.oidc.runtime.OidcJwtCallerPrincipal;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -86,6 +87,17 @@ public class FirstLoginHandler {
     }
 
     private String attribute(SecurityIdentity identity, String name) {
-        return identity.<String>getAttribute(name);
+        var value = identity.<String>getAttribute(name);
+        if (value != null && !value.isBlank()) {
+            return value;
+        }
+        var principal = identity.getPrincipal();
+        if (principal instanceof OidcJwtCallerPrincipal oidcPrincipal) {
+            var claim = oidcPrincipal.getClaim(name);
+            if (claim != null) {
+                return claim.toString();
+            }
+        }
+        return null;
     }
 }
