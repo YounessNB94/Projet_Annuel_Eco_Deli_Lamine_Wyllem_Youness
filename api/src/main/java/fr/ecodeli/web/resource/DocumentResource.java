@@ -8,6 +8,7 @@ import fr.ecodeli.service.DocumentService;
 import fr.ecodeli.web.dto.DocumentMetadataDto;
 import fr.ecodeli.web.dto.DocumentUploadForm;
 import fr.ecodeli.web.dto.DocumentUploadResponse;
+import fr.ecodeli.web.exception.EcodeliException;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
@@ -47,7 +48,9 @@ public class DocumentResource {
         var user = currentUser();
         var file = form.file;
         if (file == null || file.fileName() == null) {
-            throw new BadRequestException("Missing file");
+            throw new EcodeliException(Response.Status.BAD_REQUEST,
+                    "DOCUMENT_FILE_MISSING",
+                    "Missing file in form data");
         }
         var content = readBytes(file);
         var type = form.type == null ? DocumentType.OTHER : form.type;
@@ -81,14 +84,18 @@ public class DocumentResource {
     private AppUser currentUser() {
         var email = identity.getPrincipal().getName();
         return appUserService.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException("User not found"));
+                .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "Utilisateur introuvable"));
     }
 
     private byte[] readBytes(FileUpload file) {
         try {
             return Files.readAllBytes(file.uploadedFile());
         } catch (IOException e) {
-            throw new BadRequestException("Unable to read uploaded file", e);
+            throw new EcodeliException(Response.Status.BAD_REQUEST,
+                    "DOCUMENT_FILE_READ_ERROR",
+                    "Unable to read uploaded file");
         }
     }
 }

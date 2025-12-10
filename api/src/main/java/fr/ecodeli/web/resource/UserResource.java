@@ -14,23 +14,16 @@ import fr.ecodeli.web.dto.AddressDto;
 import fr.ecodeli.web.dto.UserAddressDto;
 import fr.ecodeli.web.dto.UserDto;
 import fr.ecodeli.web.dto.UserProfileDto;
+import fr.ecodeli.web.exception.EcodeliException;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PATCH;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Path("/api/v1/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -71,7 +64,9 @@ public class UserResource {
 
     private AppUser currentUser() {
         return appUserService.findByEmail(identity.getPrincipal().getName())
-                .orElseThrow(NotFoundException::new);
+                .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "Utilisateur introuvable"));
     }
 
     @GET

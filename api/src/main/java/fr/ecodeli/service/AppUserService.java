@@ -2,9 +2,11 @@ package fr.ecodeli.service;
 
 import fr.ecodeli.entity.AppUser;
 import fr.ecodeli.repository.AppUserRepository;
+import fr.ecodeli.web.exception.EcodeliException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,5 +50,26 @@ public class AppUserService {
     @Transactional
     public boolean delete(Long id) {
         return repository.deleteById(id);
+    }
+
+    public AppUser getRequiredByEmail(String email) {
+        return findByEmail(email)
+                .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "Utilisateur introuvable"));
+    }
+
+    public AppUser getRequiredByKeycloakId(String keycloakId) {
+        return findByKeycloakUserId(keycloakId)
+                .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "Utilisateur introuvable"));
+    }
+
+    public AppUser getRequiredById(Long id) {
+        return findById(id)
+                .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "Utilisateur introuvable"));
     }
 }

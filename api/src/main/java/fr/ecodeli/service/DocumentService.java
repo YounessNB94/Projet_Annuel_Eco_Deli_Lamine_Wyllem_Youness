@@ -7,12 +7,11 @@ import fr.ecodeli.entity.DocumentAccessId;
 import fr.ecodeli.entity.DocumentType;
 import fr.ecodeli.repository.DocumentAccessRepository;
 import fr.ecodeli.repository.DocumentRepository;
+import fr.ecodeli.web.exception.EcodeliException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotAllowedException;
-import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -20,6 +19,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Map;
 import java.util.UUID;
 import org.jboss.logging.Logger;
 
@@ -60,7 +60,10 @@ public class DocumentService {
     @Transactional
     public Document store(byte[] content, String fileName, String mimeType, long ownerUserId, DocumentType type) {
         if (content.length > maxSizeBytes) {
-            throw new NotAllowedException("File too large");
+            throw new EcodeliException(Response.Status.BAD_REQUEST,
+                    "DOCUMENT_TOO_LARGE",
+                    "File size exceeds the authorized limit",
+                    Map.of("maxSizeBytes", maxSizeBytes));
         }
         var document = new Document();
         document.setType(type == null ? DocumentType.OTHER : type);
@@ -78,11 +81,17 @@ public class DocumentService {
 
     public Document requireAccess(Long documentId, Long userId) {
         var document = documentRepository.findByIdOptional(documentId)
-                .orElseThrow(NotFoundException::new);
+                .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                        "DOCUMENT_NOT_FOUND",
+                        "Document not found"));
         var access = accessRepository.findByIdOptional(new DocumentAccessId(documentId, userId))
-                .orElseThrow(ForbiddenException::new);
+                .orElseThrow(() -> new EcodeliException(Response.Status.FORBIDDEN,
+                        "DOCUMENT_ACCESS_FORBIDDEN",
+                        "User does not have access to this document"));
         if (!access.isCanRead()) {
-            throw new ForbiddenException();
+            throw new EcodeliException(Response.Status.FORBIDDEN,
+                    "DOCUMENT_ACCESS_FORBIDDEN",
+                    "User does not have access to this document");
         }
         return document;
     }
@@ -92,7 +101,9 @@ public class DocumentService {
         try {
             return Files.readAllBytes(path);
         } catch (IOException e) {
-            throw new NotFoundException("Document content unavailable");
+            throw new EcodeliException(Response.Status.NOT_FOUND,
+                    "DOCUMENT_CONTENT_UNAVAILABLE",
+                    "Document content unavailable");
         }
     }
 
@@ -113,7 +124,9 @@ public class DocumentService {
             Files.write(path, content);
         } catch (IOException e) {
             LOG.errorf(e, "Failed to write document %s", storageKey);
-            throw new IllegalStateException("Failed to store document", e);
+            throw new EcodeliException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "DOCUMENT_STORAGE_FAILED",
+                    "Failed to store document");
         }
     }
 
@@ -125,7 +138,7 @@ public class DocumentService {
             case COURIER_PROOF -> "courier";
             default -> "other";
         };
-        return directory + "/" + UUID.randomUUID() + "-" + sanitized;
+        return directory + "/" + UUID.randomUUID() + "-" + sanitized + ".pdf";
     }
 
     private String hash(byte[] content) {
@@ -133,7 +146,9 @@ public class DocumentService {
             var digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(content));
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
+            throw new EcodeliException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "DOCUMENT_HASH_ERROR",
+                    "SHA-256 hashing unavailable");
         }
     }
 
@@ -150,7 +165,9 @@ public class DocumentService {
         try {
             return Files.newInputStream(path);
         } catch (IOException e) {
-            throw new NotFoundException("Document content unavailable");
+            throw new EcodeliException(Response.Status.NOT_FOUND,
+                    "DOCUMENT_CONTENT_UNAVAILABLE",
+                    "Document content unavailable");
         }
     }
 }
