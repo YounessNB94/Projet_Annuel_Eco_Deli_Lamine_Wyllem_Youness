@@ -5,14 +5,16 @@ INSERT INTO app_user (id, keycloak_user_id, email, phone, status, created_at, up
 VALUES (10001, 'kc-admin-001', 'admin@ecodeli.local', NULL, 'ACTIVE', now(), now()),
        (10002, 'kc-client-001', 'client@ecodeli.local', '0600000002', 'ACTIVE', now(), now()),
        (10003, 'kc-courier-001', 'livreur@ecodeli.local', '0600000003', 'ACTIVE', now(), now()),
-       (10004, 'kc-merchant-001', 'merchant@ecodeli.local', '0600000004', 'ACTIVE', now(), now())
+       (10004, 'kc-merchant-001', 'merchant@ecodeli.local', '0600000004', 'ACTIVE', now(), now()),
+       (10005, 'kc-provider-001', 'provider@ecodeli.local', '0600000005', 'ACTIVE', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO user_profile (user_id, first_name, last_name, birth_date, default_language, tutorial_shown_at, tutorial_completed_at)
 VALUES (10001, 'Ada', 'Admin', '1990-01-01', 'fr', now(), now()),
        (10002, 'Clara', 'Client', '1998-05-12', 'fr', now(), now()),
        (10003, 'Liam', 'Livreur', '1995-09-20', 'fr', now(), NULL),
-       (10004, 'Max', 'Marchand', '1988-03-03', 'fr', now(), now())
+       (10004, 'Max', 'Marchand', '1988-03-03', 'fr', now(), now()),
+       (10005, 'Eva', 'Provider', '1992-07-15', 'fr', now(), now())
 ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO address (id, label, line1, line2, postal_code, city, country_code, latitude, longitude)
@@ -31,13 +33,17 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO document (id, storage_key, file_name, mime_type, size_bytes, sha256, type, created_at)
 VALUES (201, 'courier/id_livreur_001.pdf', 'id_livreur_001.pdf', 'application/pdf', 12345, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'COURIER_PROOF', now()),
        (202, 'contracts/merchant_contract_001.pdf', 'merchant_contract_001.pdf', 'application/pdf', 23456, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'CONTRACT', now()),
-       (203, 'invoices/inv_2025_0001.pdf', 'inv_2025_0001.pdf', 'application/pdf', 34567, 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', 'INVOICE', now())
+       (203, 'invoices/inv_2025_0001.pdf', 'inv_2025_0001.pdf', 'application/pdf', 34567, 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc', 'INVOICE', now()),
+       (204, 'providers/id_provider_001.pdf', 'id_provider_001.pdf', 'application/pdf', 45678, 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'PROVIDER_PROOF', now()),
+       (205, 'providers/certif_provider_001.pdf', 'certif_provider_001.pdf', 'application/pdf', 56789, 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'PROVIDER_PROOF', now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO document_access (document_id, user_id, can_read)
 VALUES (201, 10003, true),
        (202, 10004, true),
-       (203, 10002, true)
+       (203, 10002, true),
+       (204, 10005, true),
+       (205, 10005, true)
 ON CONFLICT (document_id, user_id) DO NOTHING;
 
 INSERT INTO courier_profile (user_id, status, validated_at, vehicle_type, max_weight_kg, iban_masked)
@@ -45,8 +51,20 @@ VALUES (10003, 'APPROVED', now(), 'CAR', 50.0,
         'FR76 **** **** **** **** **** 123')
 ON CONFLICT (user_id) DO NOTHING;
 
+INSERT INTO provider_profile (user_id, status, validated_at, validated_by_admin_id, bio, skills, hourly_rate_cents, currency, iban_masked,created_at, updated_at)
+VALUES (10005, 'APPROVED', now() - interval '2 days', 10001,
+        'Prestataire expérimentée pour services à domicile',
+        'ménage,garde-enfant,repassage',
+        3000, 'EUR', 'FR76 **** **** **** **** **** 987', now(), now())
+ON CONFLICT (user_id) DO NOTHING;
+
 INSERT INTO courier_document (id, courier_user_id, type, document_id, status, reviewed_at, reviewed_by_admin_id)
 VALUES (301, 10003, 'ID', 201, 'APPROVED', now(), 1)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO provider_attachment (id, provider_user_id, document_id, type, status, submitted_at, reviewed_at, reviewed_by_admin_id)
+VALUES (401, 10005, 204, 'ID', 'APPROVED', now() - interval '5 days', now() - interval '4 days', 10001),
+       (402, 10005, 205, 'CERTIFICATE', 'PENDING', now() - interval '1 days', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO merchant_company (id, merchant_user_id, name, siret, vat_number, billing_email, created_at)
@@ -101,3 +119,20 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO notification (id, user_id, title, body, data_json, sent_at, read_at)
 VALUES (1001, 2, 'Commande prise en charge', 'Votre annonce a été prise en charge par un livreur.', '{"announcementId":501}', now(), NULL)
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO provider_availability (id, provider_user_id, day_of_week, date, start_time, end_time, timezone, is_recurring)
+VALUES (501, 10005, 'MONDAY', NULL, '08:00', '12:00', 'Europe/Paris', true),
+       (502, 10005, 'WEDNESDAY', NULL, '14:00', '18:00', 'Europe/Paris', true),
+       (503, 10005, NULL, current_date + interval '3 days', '09:00', '11:00', 'Europe/Paris', false)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO provider_assignment (id, provider_user_id, title, description, status, scheduled_at, completed_at, client_name, client_contact)
+VALUES (601, 10005, 'Aide ménagère - Centre Paris', 'Nettoyage hebdomadaire d''un appartement 70m²', 'IN_PROGRESS', now() + interval '1 day', NULL, 'Mme Martin', 'martin@example.com')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO provider_invoice (id, provider_user_id, period_start, period_end, total_cents, currency, status, document_id, issued_at)
+VALUES (701, 10005, date_trunc('month', now())::timestamp,
+        (date_trunc('month', now()) + interval '1 month - 1 day')::timestamp,
+        42000, 'EUR', 'ISSUED', 203, now())
+ON CONFLICT (id) DO NOTHING;
+

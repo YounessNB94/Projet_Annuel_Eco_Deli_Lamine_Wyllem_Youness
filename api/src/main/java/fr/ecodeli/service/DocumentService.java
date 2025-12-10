@@ -135,10 +135,12 @@ public class DocumentService {
         var directory = switch (type) {
             case CONTRACT -> "contracts";
             case INVOICE -> "invoices";
-            case COURIER_PROOF -> "courier";
+            case COURIER_PROOF -> "couriers";
+            case PROVIDER_PROOF -> "providers";
             default -> "other";
         };
-        return directory + "/" + UUID.randomUUID() + "-" + sanitized + ".pdf";
+        var uniqueName = UUID.randomUUID() + "-" + sanitized;
+        return directory + "/" + uniqueName;
     }
 
     private String hash(byte[] content) {
