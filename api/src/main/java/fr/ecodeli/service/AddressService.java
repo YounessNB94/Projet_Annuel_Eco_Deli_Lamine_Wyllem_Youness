@@ -2,13 +2,14 @@ package fr.ecodeli.service;
 
 import fr.ecodeli.entity.Address;
 import fr.ecodeli.repository.AddressRepository;
+import fr.ecodeli.web.exception.EcodeliException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
 
 import java.util.List;
 import java.util.Optional;
+import jakarta.ws.rs.core.Response;
 
 @ApplicationScoped
 public class AddressService {
@@ -36,7 +37,9 @@ public class AddressService {
 
     @Transactional
     public Address update(Long id, Address payload) {
-        var existing = repository.findByIdOptional(id).orElseThrow(NotFoundException::new);
+        var existing = repository.findByIdOptional(id).orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                "ADDRESS_NOT_FOUND",
+                "Adresse introuvable"));
         existing.setLabel(payload.getLabel());
         existing.setLine1(payload.getLine1());
         existing.setLine2(payload.getLine2());

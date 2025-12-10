@@ -24,8 +24,8 @@ INSERT INTO user_address (user_id, address_id, is_default)
 VALUES (10002, 101, true)
 ON CONFLICT (user_id, address_id) DO NOTHING;
 
-INSERT INTO user_device (id, user_id, onesignal_player_id, platform, created_at)
-VALUES (1001, 10002, 'onesignal-player-client-001', 'web', now())
+INSERT INTO user_device (id, user_id, onesignal_player_id, platform, created_at, last_active_at)
+VALUES (1001, 10002, 'onesignal-player-client-001', 'web', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO document (id, storage_key, file_name, mime_type, size_bytes, sha256, type, created_at)

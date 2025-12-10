@@ -2,18 +2,14 @@ package fr.ecodeli.web.resource;
 
 import fr.ecodeli.entity.AppUser;
 import fr.ecodeli.entity.UserAddressId;
-import fr.ecodeli.mapper.AddressMapper;
-import fr.ecodeli.mapper.UserAddressMapper;
-import fr.ecodeli.mapper.UserMapper;
-import fr.ecodeli.mapper.UserProfileMapper;
-import fr.ecodeli.service.AddressService;
-import fr.ecodeli.service.AppUserService;
-import fr.ecodeli.service.UserAddressService;
-import fr.ecodeli.service.UserProfileService;
+import fr.ecodeli.mapper.*;
+import fr.ecodeli.service.*;
 import fr.ecodeli.web.dto.AddressDto;
 import fr.ecodeli.web.dto.UserAddressDto;
 import fr.ecodeli.web.dto.UserDto;
 import fr.ecodeli.web.dto.UserProfileDto;
+import fr.ecodeli.web.dto.UserDeviceCreateDto;
+import fr.ecodeli.web.dto.UserDeviceDto;
 import fr.ecodeli.web.exception.EcodeliException;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -40,6 +36,8 @@ public class UserResource {
     private final UserProfileMapper userProfileMapper;
     private final AddressMapper addressMapper;
     private final UserAddressMapper userAddressMapper;
+    private final UserDeviceService userDeviceService;
+    private final UserDeviceMapper userDeviceMapper;
 
     @Inject
     public UserResource(SecurityIdentity identity,
@@ -50,7 +48,9 @@ public class UserResource {
                         UserMapper userMapper,
                         UserProfileMapper userProfileMapper,
                         AddressMapper addressMapper,
-                        UserAddressMapper userAddressMapper) {
+                        UserAddressMapper userAddressMapper,
+                        UserDeviceService userDeviceService,
+                        UserDeviceMapper userDeviceMapper) {
         this.identity = identity;
         this.appUserService = appUserService;
         this.userProfileService = userProfileService;
@@ -60,6 +60,8 @@ public class UserResource {
         this.userProfileMapper = userProfileMapper;
         this.addressMapper = addressMapper;
         this.userAddressMapper = userAddressMapper;
+        this.userDeviceService = userDeviceService;
+        this.userDeviceMapper = userDeviceMapper;
     }
 
     private AppUser currentUser() {
@@ -114,11 +116,42 @@ public class UserResource {
         return addressMapper.toDto(updated);
     }
 
+    @PUT
+    @Path("/me/addresses/{addressId}/default")
+    public UserAddressDto setDefaultAddress(@PathParam("addressId") Long addressId) {
+        var user = currentUser();
+        var updated = userAddressService.setDefault(user, addressId);
+        return userAddressMapper.toDto(updated);
+    }
+
     @DELETE
     @Path("/me/addresses/{addressId}")
     public void deleteAddress(@PathParam("addressId") Long addressId) {
         var user = currentUser();
-        userAddressService.ensureOwnership(user, addressId);
-        userAddressService.delete(new UserAddressId(user.getId(), addressId));
+        userAddressService.deleteForUser(user, addressId);
+    }
+
+    @GET
+    @Path("/me/devices")
+    public List<UserDeviceDto> listDevices() {
+        var user = currentUser();
+        return userDeviceService.listByUser(user).stream()
+                .map(userDeviceMapper::toDto)
+                .toList();
+    }
+
+    @POST
+    @Path("/me/devices")
+    public UserDeviceDto registerDevice(@Valid UserDeviceCreateDto payload) {
+        var user = currentUser();
+        var device = userDeviceService.register(user, userDeviceMapper.toEntity(payload));
+        return userDeviceMapper.toDto(device);
+    }
+
+    @DELETE
+    @Path("/me/devices/{deviceId}")
+    public void deleteDevice(@PathParam("deviceId") Long deviceId) {
+        var user = currentUser();
+        userDeviceService.delete(user, deviceId);
     }
 }
