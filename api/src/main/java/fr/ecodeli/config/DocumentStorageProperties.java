@@ -3,10 +3,10 @@ package fr.ecodeli.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
-@ConfigMapping(prefix = "app.documents")
+@ConfigMapping(prefix = "ecodeli.documents")
 public interface DocumentStorageProperties {
 
-    @WithDefault("documents")
+    @WithDefault("src/main/resources/documents")
     String storagePath();
 
     /**
