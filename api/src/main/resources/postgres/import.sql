@@ -108,16 +108,16 @@ VALUES (603, 602, now(), 'INFO', 48.8566000, 2.3522000, 'Livraison acceptée'),
        (604, 602, now() + interval '1 hour', 'PICKED_UP', 48.8570000, 2.3530000, 'Colis récupéré')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO payment (id, payer_user_id, provider, stripe_payment_intent_id, amount_cents, currency, status, created_at, captured_at)
-VALUES (701, 2, 'STRIPE', 'pi_demo_0001', 3500, 'EUR', 'SUCCEEDED', now(), now())
+INSERT INTO payment (id, payer_user_id, stripe_payment_intent_id, amount_cents, currency, status, description, created_at, updated_at)
+VALUES (701, 10002, 'pi_demo_0001', 3500, 'EUR', 'SUCCEEDED', 'Paiement seed livraison', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO billable_link (id, payment_id, delivery_id)
-VALUES (702, 701, 602)
+INSERT INTO billable_link (id, payment_id, delivery_id, type, label)
+VALUES (702, 701, 602, 'DELIVERY', 'Livraison 602')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO invoice (id, invoice_no, entity_type, entity_id, status, period_start, period_end, total_cents, currency, pdf_document_id, issued_at)
-VALUES (801, 'INV-2025-0001', 'USER', 2, 'ISSUED', date_trunc('month', now())::date, (date_trunc('month', now()) + interval '1 month - 1 day')::date, 3500, 'EUR', 203, now())
+INSERT INTO invoice (id, invoice_no, user_id, payment_id, status, period_start, period_end, total_cents, currency, pdf_document_id, issued_at)
+VALUES (801, 'INV-2025-0001', 10002, 701, 'ISSUED', date_trunc('month', now())::date, (date_trunc('month', now()) + interval '1 month - 1 day')::date, 3500, 'EUR', 203, now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO invoice_line (id, invoice_id, label, quantity, unit_price_cents, total_cents)
@@ -125,11 +125,15 @@ VALUES (802, 801, 'Livraison Paris -> Marseille', 1, 3500, 3500)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO payout (id, beneficiary_user_id, status, period_start, period_end, amount_cents, currency, reference, sent_at)
-VALUES (901, 3, 'PENDING', date_trunc('month', now())::date, (date_trunc('month', now()) + interval '1 month - 1 day')::date, 2500, 'EUR', 'PAYOUT-2025-0001', NULL)
+VALUES (901, 10003, 'PENDING', date_trunc('month', now())::date, (date_trunc('month', now()) + interval '1 month - 1 day')::date, 2500, 'EUR', 'PAYOUT-2025-0001', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO notification (id, user_id, title, body, data_json, sent_at, read_at)
 VALUES (1001, 2, 'Commande prise en charge', 'Votre annonce a été prise en charge par un livreur.', '{"announcementId":501}', now(), NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO payout_line (id, payout_id, delivery_id, amount_cents, currency, note, recorded_at)
+VALUES (902, 901, 602, 2500, 'EUR', 'Livraison Paris -> Marseille', now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO provider_availability (id, provider_user_id, day_of_week, date, start_time, end_time, timezone, is_recurring)
