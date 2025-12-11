@@ -4,8 +4,6 @@ import type { AnnouncementStatus } from '../api/clientAnnouncements';
 const statusLabelMap: Record<AnnouncementStatus, string> = {
   DRAFT: 'Brouillon',
   PUBLISHED: 'Publiée',
-  ASSIGNED: 'Assignée',
-  COMPLETED: 'Terminée',
   CANCELLED: 'Annulée',
 };
 
@@ -15,8 +13,6 @@ const statusColorMap: Record<
 > = {
   DRAFT: 'default',
   PUBLISHED: 'info',
-  ASSIGNED: 'success',
-  COMPLETED: 'success',
   CANCELLED: 'error',
 };
 

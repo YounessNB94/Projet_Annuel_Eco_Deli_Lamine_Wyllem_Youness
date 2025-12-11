@@ -161,11 +161,11 @@ export const CourierDeliveryDetailPage = () => {
   }, [data]);
 
   const handleAdvanceStatus = async () => {
-    if (!deliveryId) {
+    if (!deliveryId || !nextStatus) {
       return;
     }
     try {
-      const updated = await mutateAsync(deliveryId);
+      const updated = await mutateAsync({ deliveryId, nextStatus });
       setSnackbar({ message: `Statut mis a jour vers ${statusLabels[updated.status]}`, severity: 'success' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Action impossible';

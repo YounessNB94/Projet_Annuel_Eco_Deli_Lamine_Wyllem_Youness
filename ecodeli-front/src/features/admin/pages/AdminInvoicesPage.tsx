@@ -1,11 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  Avatar,
-  Box,
-  Button,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Avatar, Box, Button, Stack, Typography } from '@mui/material';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 
@@ -15,97 +9,21 @@ import { AdminDataTable, type AdminTableColumn } from '../components/AdminDataTa
 import { AdminStatusChip, type AdminStatus } from '../components/AdminStatusChip';
 import { AdminFilterToolbar, type AdminFilterOption } from '../components/AdminFilterToolbar';
 import { AdminInfoList } from '../components/AdminInfoList';
-import { AdminActivityList, type AdminActivityItem } from '../components/AdminActivityList';
+import { AdminActivityList } from '../components/AdminActivityList';
+import {
+  type AdminInvoiceRow,
+  type AdminInvoiceEntity,
+} from '../api/adminInvoices';
+import { useAdminInvoicesData } from '../hooks/useAdminInvoices';
 import { downloadAdminInvoicePdf } from '../utils/downloadAdminInvoicePdf';
 import { exportAdminInvoiceReportCsv } from '../utils/exportAdminInvoiceReportCsv';
 
-const invoiceStats = [
-  { label: 'Factures en attente', value: '12', helper: '8 échéances < 7 jours' },
-  { label: 'Montant à encaisser', value: '32,4 K€', helper: 'Clients commerçants' },
-  { label: 'Payées ce mois-ci', value: '58', helper: '+12% vs M-1' },
-  { label: 'Taux de litiges', value: '1,3%', helper: 'Objectif < 2%' },
-];
-
-type InvoiceEntity = 'merchant' | 'courier';
+type InvoiceEntity = AdminInvoiceEntity;
 type InvoiceEntityFilter = 'all' | InvoiceEntity;
 type InvoiceFilter = 'all' | AdminStatus;
 
 const normalizeText = (value: string) =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-interface InvoiceRow {
-  id: string;
-  entity: InvoiceEntity;
-  counterpart: string;
-  period: string;
-  amount: string;
-  status: AdminStatus;
-  issuedAt: string;
-  dueAt: string;
-}
-
-const invoiceRows: InvoiceRow[] = [
-  {
-    id: 'INV-2024-781',
-    entity: 'merchant',
-    counterpart: 'EcoMarket Paris',
-    period: 'Novembre 2025',
-    amount: '6 540 €',
-    status: 'due',
-    issuedAt: '02 déc 2025',
-    dueAt: '12 déc 2025',
-  },
-  {
-    id: 'INV-2024-779',
-    entity: 'merchant',
-    counterpart: 'Greenify Lille',
-    period: 'Novembre 2025',
-    amount: '3 120 €',
-    status: 'paid',
-    issuedAt: '01 déc 2025',
-    dueAt: '10 déc 2025',
-  },
-  {
-    id: 'INV-2024-768',
-    entity: 'courier',
-    counterpart: 'Yohan Pereira',
-    period: 'Novembre 2025',
-    amount: '1 240 €',
-    status: 'paid',
-    issuedAt: '28 nov 2025',
-    dueAt: '05 déc 2025',
-  },
-  {
-    id: 'INV-2024-751',
-    entity: 'merchant',
-    counterpart: 'Upcycle Store',
-    period: 'Octobre 2025',
-    amount: '9 980 €',
-    status: 'overdue',
-    issuedAt: '08 nov 2025',
-    dueAt: '25 nov 2025',
-  },
-  {
-    id: 'INV-2024-740',
-    entity: 'courier',
-    counterpart: 'Nadia Benali',
-    period: 'Octobre 2025',
-    amount: '980 €',
-    status: 'due',
-    issuedAt: '04 nov 2025',
-    dueAt: '18 nov 2025',
-  },
-  {
-    id: 'INV-2024-701',
-    entity: 'merchant',
-    counterpart: 'Maison Verde',
-    period: 'Septembre 2025',
-    amount: '5 420 €',
-    status: 'paid',
-    issuedAt: '05 oct 2025',
-    dueAt: '15 oct 2025',
-  },
-];
 
 const statusFilters: AdminFilterOption<InvoiceFilter>[] = [
   { label: 'Tous les statuts', value: 'all' },
@@ -118,31 +36,9 @@ const entityFilters: AdminFilterOption<InvoiceEntityFilter>[] = [
   { label: 'Commerçants', value: 'merchant' },
   { label: 'Livreurs', value: 'courier' },
 ];
-
-const paymentActivity: AdminActivityItem[] = [
-  {
-    id: 'pay-1',
-    title: 'Paiement reçu - INV-2024-779',
-    description: 'Greenify Lille - virement SEPA confirmé.',
-    timestamp: 'Il y a 12 min',
-  },
-  {
-    id: 'pay-2',
-    title: 'Relance envoyée - INV-2024-751',
-    description: 'Email + notification backoffice programmés.',
-    timestamp: 'Il y a 45 min',
-  },
-  {
-    id: 'pay-3',
-    title: 'Validation note de crédit',
-    description: 'Maison Verde - avoir appliqué (450 €).',
-    timestamp: 'Ce matin',
-  },
-];
-
 const createInvoiceColumns = (
-  onDownload: (invoice: InvoiceRow) => Promise<void> | void
-): AdminTableColumn<InvoiceRow>[] => [
+  onDownload: (invoice: AdminInvoiceRow) => Promise<void> | void,
+): AdminTableColumn<AdminInvoiceRow>[] => [
   {
     key: 'invoice',
     label: 'Facture',
@@ -215,10 +111,15 @@ const createInvoiceColumns = (
 ];
 
 export const AdminInvoicesPage = () => {
+  const { data } = useAdminInvoicesData();
+  const invoiceStats = data?.stats ?? [];
+  const invoiceRows = data?.invoices ?? [];
+  const paymentActivity = data?.paymentActivity ?? [];
+  const summaryItems = data?.summaryItems ?? [];
   const [statusFilter, setStatusFilter] = useState<InvoiceFilter>('all');
   const [entityFilter, setEntityFilter] = useState<InvoiceEntityFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const handleInvoiceDownload = useCallback(async (invoice: InvoiceRow) => {
+  const handleInvoiceDownload = useCallback(async (invoice: AdminInvoiceRow) => {
     try {
       await downloadAdminInvoicePdf({
         id: invoice.id,
@@ -368,12 +269,7 @@ export const AdminInvoicesPage = () => {
         <AdminSectionCard title="Synthèse encours" subtitle="Montants clés">
           <AdminInfoList
             columns={2}
-            items={[
-              { label: 'Total en retard', value: '9 980 €', helper: '1 facture > 10 jours' },
-              { label: 'À encaisser (7 jours)', value: '12 600 €', helper: '4 factures' },
-              { label: 'Reversement livreurs', value: '2 220 €', helper: 'Cycle hebdomadaire' },
-              { label: 'Litiges ouverts', value: '2', helper: 'Traitement juridique' },
-            ]}
+            items={summaryItems}
           />
         </AdminSectionCard>
 

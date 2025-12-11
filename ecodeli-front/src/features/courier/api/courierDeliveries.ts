@@ -1,3 +1,7 @@
+import { isAxiosError } from 'axios';
+import { httpClient } from '../../../shared/api/httpClient';
+import type { PaginatedResponse } from '../../../shared/api/types';
+
 export type CourierDeliveryStatus =
   | 'ACCEPTED'
   | 'PICKED_UP'
@@ -19,75 +23,6 @@ export interface CourierDelivery {
   assignmentDate: string;
   notes?: string;
 }
-
-const MOCK_COURIER_DELIVERIES: CourierDelivery[] = [
-  {
-    id: 'DLV-201',
-    title: 'Pharmacie Paris → Antony',
-    clientName: 'Pharma Lyonnais',
-    pickupAddress: '18 Rue Oberkampf, 75011 Paris',
-    dropoffAddress: '42 Avenue de la Division Leclerc, 92160 Antony',
-    pickupWindow: 'Aujourd\'hui • 14:00 - 15:00',
-    dropoffWindow: 'Aujourd\'hui • 16:00 - 17:30',
-    distanceKm: 18,
-    earnings: 38,
-    status: 'IN_TRANSIT',
-    vehicleType: 'Velo cargo',
-    assignmentDate: '8 Dec 2025, 11:45',
-    notes: 'Contient produits sensibles, rester a l\'ombre.',
-  },
-  {
-    id: 'DLV-202',
-    title: 'Samples laboratoire',
-    clientName: 'Laboratoire Nord',
-    pickupAddress: '5 Rue Nationale, 59000 Lille',
-    dropoffAddress: '12 Rue des Arts, 59800 Lille',
-    pickupWindow: 'Aujourd\'hui • 17:00 - 17:30',
-    dropoffWindow: 'Aujourd\'hui • 18:00 - 18:30',
-    distanceKm: 6,
-    earnings: 24,
-    status: 'ACCEPTED',
-    vehicleType: 'Velo',
-    assignmentDate: '8 Dec 2025, 09:20',
-  },
-  {
-    id: 'DLV-203',
-    title: 'Palette eco meubles',
-    clientName: 'Atelier du Bois',
-    pickupAddress: 'Zone artisanale, 33000 Bordeaux',
-    dropoffAddress: 'Entrepot EcoDeli, 44000 Nantes',
-    pickupWindow: 'Demain • 07:30 - 09:00',
-    dropoffWindow: 'Demain • 19:00 - 21:00',
-    distanceKm: 347,
-    earnings: 230,
-    status: 'ACCEPTED',
-    vehicleType: 'Utilitaire',
-    assignmentDate: '7 Dec 2025, 18:05',
-    notes: 'Prevoir sangles et couverture.',
-  },
-  {
-    id: 'DLV-204',
-    title: 'Mode eco Paris → Reims',
-    clientName: 'Maison Mireille',
-    pickupAddress: '21 Rue du Faubourg Saint-Denis, 75010 Paris',
-    dropoffAddress: '8 Rue de Vesle, 51100 Reims',
-    pickupWindow: 'Hier • 11:00 - 12:00',
-    dropoffWindow: 'Hier • 16:00 - 18:00',
-    distanceKm: 145,
-    earnings: 95,
-    status: 'DELIVERED',
-    vehicleType: 'Voiture electrique',
-    assignmentDate: '6 Dec 2025, 10:10',
-  },
-];
-
-const delay = (min = 200, max = 600) =>
-  new Promise((resolve) => setTimeout(resolve, Math.random() * (max - min) + min));
-
-export const fetchCourierDeliveries = async (): Promise<CourierDelivery[]> => {
-  await delay();
-  return MOCK_COURIER_DELIVERIES.map((delivery) => ({ ...delivery }));
-};
 
 export interface CourierDeliveryContact {
   name: string;
@@ -111,7 +46,219 @@ export interface CourierDeliveryDetail extends CourierDelivery {
   timeline: CourierDeliveryTimelineItem[];
 }
 
+export interface AdvanceCourierDeliveryStatusInput {
+  deliveryId: string;
+  nextStatus: CourierDeliveryStatus;
+}
+
+interface CourierDeliveryClientResponse {
+  name?: string;
+}
+
+interface CourierDeliveryVehicleResponse {
+  type?: string;
+  model?: string;
+  plate?: string;
+}
+
+interface CourierDeliveryResponse {
+  id: number | string;
+  title?: string;
+  jobTitle?: string;
+  clientName?: string;
+  client?: CourierDeliveryClientResponse;
+  pickupAddress?: string;
+  pickupCity?: string;
+  dropoffAddress?: string;
+  dropoffCity?: string;
+  pickupWindowStart?: string;
+  pickupWindowEnd?: string;
+  pickupStartAt?: string;
+  pickupEndAt?: string;
+  dropoffWindowStart?: string;
+  dropoffWindowEnd?: string;
+  dropoffStartAt?: string;
+  dropoffEndAt?: string;
+  distanceKm?: number;
+  distanceMeters?: number;
+  earningsAmount?: number;
+  paymentAmount?: number;
+  payoutAmount?: number;
+  status?: string;
+  vehicleType?: string;
+  vehicle?: CourierDeliveryVehicleResponse;
+  assignmentDate?: string;
+  assignedAt?: string;
+  assignedOn?: string;
+  notes?: string;
+}
+
+interface CourierDeliveryContactResponse {
+  name?: string;
+  phone?: string;
+}
+
+interface CourierDeliveryTimelineResponse {
+  status?: string;
+  label?: string;
+  timestamp?: string;
+  completed?: boolean;
+  current?: boolean;
+}
+
+interface CourierDeliveryDetailResponse extends CourierDeliveryResponse {
+  pickupContact?: CourierDeliveryContactResponse;
+  pickupContactName?: string;
+  pickupContactPhone?: string;
+  dropoffContact?: CourierDeliveryContactResponse;
+  dropoffContactName?: string;
+  dropoffContactPhone?: string;
+  packageType?: string;
+  packageCategory?: string;
+  parcelDescription?: string;
+  weight?: string;
+  weightKg?: number;
+  packageWeight?: number;
+  instructions?: string;
+  timeline?: CourierDeliveryTimelineResponse[];
+}
+
 const STATUS_FLOW: CourierDeliveryStatus[] = ['ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED'];
+
+const STATUS_LABELS: Record<CourierDeliveryStatus, string> = {
+  ACCEPTED: 'Mission acceptée',
+  PICKED_UP: 'Colis collecté',
+  IN_TRANSIT: 'En cours de livraison',
+  DELIVERED: 'Livraison effectuée',
+};
+
+const parseDate = (value?: string) => {
+  if (!value) {
+    return undefined;
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
+const normalizeStatus = (status?: string): CourierDeliveryStatus => {
+  switch (String(status ?? '').toUpperCase()) {
+    case 'PICKED_UP':
+    case 'PICKUP_CONFIRMED':
+      return 'PICKED_UP';
+    case 'IN_TRANSIT':
+    case 'ON_ROUTE':
+      return 'IN_TRANSIT';
+    case 'DELIVERED':
+      return 'DELIVERED';
+    case 'ACCEPTED':
+    default:
+      return 'ACCEPTED';
+  }
+};
+
+const formatWindow = (startValue?: string, endValue?: string) => {
+  const start = parseDate(startValue);
+  const end = parseDate(endValue);
+  const dayFormatter = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+  });
+  const timeFormatter = new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  if (!start && !end) {
+    return 'Créneau à confirmer';
+  }
+
+  if (start && end) {
+    const sameDay = start.toDateString() === end.toDateString();
+    if (sameDay) {
+      return `${dayFormatter.format(start)} • ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`;
+    }
+    return `${dayFormatter.format(start)} ${timeFormatter.format(start)} → ${dayFormatter.format(end)} ${timeFormatter.format(end)}`;
+  }
+
+  const reference = start ?? end;
+  if (!reference) {
+    return 'Créneau à confirmer';
+  }
+  return `${dayFormatter.format(reference)} • ${timeFormatter.format(reference)}`;
+};
+
+const formatDateTime = (value?: string) => {
+  const date = parseDate(value);
+  if (!date) {
+    return '—';
+  }
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
+const formatDistance = (distanceKm?: number, distanceMeters?: number) => {
+  if (typeof distanceKm === 'number' && Number.isFinite(distanceKm)) {
+    return Math.round(distanceKm * 10) / 10;
+  }
+  if (typeof distanceMeters === 'number' && Number.isFinite(distanceMeters)) {
+    return Math.round((distanceMeters / 1000) * 10) / 10;
+  }
+  return 0;
+};
+
+const formatWeight = (weight?: string | number) => {
+  if (typeof weight === 'number' && Number.isFinite(weight)) {
+    return `${weight} kg`;
+  }
+  if (typeof weight === 'string' && weight.trim().length > 0) {
+    return weight;
+  }
+  return 'Poids à confirmer';
+};
+
+const formatVehicleLabel = (vehicleType?: string, vehicle?: CourierDeliveryVehicleResponse) => {
+  if (vehicleType && vehicleType.trim().length > 0) {
+    return vehicleType;
+  }
+  const parts = [vehicle?.type, vehicle?.model, vehicle?.plate]
+    .filter((value) => value && value.trim().length > 0)
+    .join(' - ');
+  if (parts.length > 0) {
+    return parts;
+  }
+  return 'Véhicule à confirmer';
+};
+
+const mapDeliveryBase = (payload: CourierDeliveryResponse): CourierDelivery => ({
+  id: String(payload.id),
+  title: payload.title ?? payload.jobTitle ?? 'Livraison EcoDeli',
+  clientName: payload.clientName ?? payload.client?.name ?? 'Client EcoDeli',
+  pickupAddress:
+    payload.pickupAddress ?? payload.pickupCity ?? 'Adresse de collecte non renseignée',
+  dropoffAddress:
+    payload.dropoffAddress ?? payload.dropoffCity ?? 'Adresse de livraison non renseignée',
+  pickupWindow: formatWindow(payload.pickupWindowStart ?? payload.pickupStartAt, payload.pickupWindowEnd ?? payload.pickupEndAt),
+  dropoffWindow: formatWindow(payload.dropoffWindowStart ?? payload.dropoffStartAt, payload.dropoffWindowEnd ?? payload.dropoffEndAt),
+  distanceKm: formatDistance(payload.distanceKm, payload.distanceMeters),
+  earnings: payload.earningsAmount ?? payload.paymentAmount ?? payload.payoutAmount ?? 0,
+  status: normalizeStatus(payload.status),
+  vehicleType: formatVehicleLabel(payload.vehicleType, payload.vehicle),
+  assignmentDate: formatDateTime(payload.assignmentDate ?? payload.assignedAt ?? payload.assignedOn),
+  notes: payload.notes ?? undefined,
+});
+
+const mapContact = (
+  contact?: CourierDeliveryContactResponse,
+  fallbackName?: string,
+  fallbackPhone?: string,
+): CourierDeliveryContact => ({
+  name: contact?.name ?? fallbackName ?? 'Contact à confirmer',
+  phone: contact?.phone ?? fallbackPhone ?? 'N/A',
+});
 
 const syncTimelineWithStatus = (
   timeline: CourierDeliveryTimelineItem[],
@@ -131,261 +278,121 @@ const syncTimelineWithStatus = (
   });
 };
 
-const MOCK_COURIER_DELIVERY_DETAILS: Record<string, CourierDeliveryDetail> = {
-  'DLV-201': {
-    id: 'DLV-201',
-    title: 'Pharmacie Paris → Antony',
-    clientName: 'Pharma Lyonnais',
-    pickupAddress: '18 Rue Oberkampf, 75011 Paris',
-    dropoffAddress: '42 Avenue de la Division Leclerc, 92160 Antony',
-    pickupWindow: 'Aujourd\'hui • 14:00 - 15:00',
-    dropoffWindow: 'Aujourd\'hui • 16:00 - 17:30',
-    distanceKm: 18,
-    earnings: 38,
-    status: 'IN_TRANSIT',
-    vehicleType: 'Velo cargo',
-    assignmentDate: '8 Dec 2025, 11:45',
-    notes: 'Contient produits sensibles, rester a l\'ombre.',
-    pickupContact: {
-      name: 'Jean Dupont',
-      phone: '+33 6 12 34 56 78',
-    },
-    dropoffContact: {
-      name: 'Sophie Martin',
-      phone: '+33 6 84 32 18 90',
-    },
-    packageType: 'Colis medical',
-    weight: '8 kg',
-    timeline: syncTimelineWithStatus(
-      [
-        {
-          status: 'ACCEPTED',
-          label: 'Mission acceptee',
-          dateLabel: '8 Dec 2025, 11:45',
-          completed: true,
-        },
-        {
-          status: 'PICKED_UP',
-          label: 'Colis collecte',
-          dateLabel: 'Aujourd\'hui • 14:10',
-          completed: true,
-        },
-        {
-          status: 'IN_TRANSIT',
-          label: 'En cours de livraison',
-          dateLabel: 'Aujourd\'hui • 14:30',
-          completed: true,
-        },
-        {
-          status: 'DELIVERED',
-          label: 'Livraison effectuee',
-          dateLabel: 'Estimee Aujourd\'hui • 17:00',
-          completed: false,
-        },
-      ],
-      'IN_TRANSIT',
+const mapTimeline = (
+  items: CourierDeliveryTimelineResponse[] = [],
+  currentStatus: CourierDeliveryStatus,
+): CourierDeliveryTimelineItem[] => {
+  const mapped = items.map((item) => ({
+    status: normalizeStatus(item.status),
+    label: item.label ?? STATUS_LABELS[normalizeStatus(item.status)],
+    dateLabel: formatDateTime(item.timestamp),
+    completed: Boolean(item.completed),
+    current: Boolean(item.current),
+  }));
+
+  if (mapped.length === 0) {
+    return syncTimelineWithStatus(
+      STATUS_FLOW.map((status) => ({
+        status,
+        label: STATUS_LABELS[status],
+        dateLabel: 'En attente',
+        completed: false,
+      })),
+      currentStatus,
+    );
+  }
+
+  const hasProgressData = mapped.some((item) => item.completed || item.current);
+  if (!hasProgressData) {
+    return syncTimelineWithStatus(
+      mapped.map((item) => ({ ...item, completed: false, current: false })),
+      currentStatus,
+    );
+  }
+
+  return syncTimelineWithStatus(mapped, currentStatus);
+};
+
+const mapDeliveryDetail = (payload: CourierDeliveryDetailResponse): CourierDeliveryDetail => {
+  const base = mapDeliveryBase(payload);
+  const weightValue = payload.weight ?? payload.weightKg ?? payload.packageWeight;
+
+  return {
+    ...base,
+    pickupContact: mapContact(
+      payload.pickupContact,
+      payload.pickupContactName,
+      payload.pickupContactPhone,
     ),
-  },
-  'DLV-202': {
-    id: 'DLV-202',
-    title: 'Samples laboratoire',
-    clientName: 'Laboratoire Nord',
-    pickupAddress: '5 Rue Nationale, 59000 Lille',
-    dropoffAddress: '12 Rue des Arts, 59800 Lille',
-    pickupWindow: 'Aujourd\'hui • 17:00 - 17:30',
-    dropoffWindow: 'Aujourd\'hui • 18:00 - 18:30',
-    distanceKm: 6,
-    earnings: 24,
-    status: 'ACCEPTED',
-    vehicleType: 'Velo',
-    assignmentDate: '8 Dec 2025, 09:20',
-    pickupContact: {
-      name: 'Claire Robert',
-      phone: '+33 6 70 12 45 67',
-    },
-    dropoffContact: {
-      name: 'Dr Etienne',
-      phone: '+33 6 70 88 12 34',
-    },
-    packageType: 'Petits echantillons',
-    weight: '2 kg',
-    instructions: 'Transporter dans le sac isotherme.',
-    timeline: syncTimelineWithStatus(
-      [
-        {
-          status: 'ACCEPTED',
-          label: 'Mission acceptee',
-          dateLabel: '8 Dec 2025, 09:20',
-          completed: true,
-        },
-        {
-          status: 'PICKED_UP',
-          label: 'Colis collecte',
-          dateLabel: 'Prevue Aujourd\'hui • 17:00',
-          completed: false,
-        },
-        {
-          status: 'IN_TRANSIT',
-          label: 'En cours de livraison',
-          dateLabel: 'En attente',
-          completed: false,
-        },
-        {
-          status: 'DELIVERED',
-          label: 'Livraison effectuee',
-          dateLabel: 'Estimee Aujourd\'hui • 18:15',
-          completed: false,
-        },
-      ],
-      'ACCEPTED',
+    dropoffContact: mapContact(
+      payload.dropoffContact,
+      payload.dropoffContactName,
+      payload.dropoffContactPhone,
     ),
-  },
-  'DLV-203': {
-    id: 'DLV-203',
-    title: 'Palette eco meubles',
-    clientName: 'Atelier du Bois',
-    pickupAddress: 'Zone artisanale, 33000 Bordeaux',
-    dropoffAddress: 'Entrepot EcoDeli, 44000 Nantes',
-    pickupWindow: 'Demain • 07:30 - 09:00',
-    dropoffWindow: 'Demain • 19:00 - 21:00',
-    distanceKm: 347,
-    earnings: 230,
-    status: 'ACCEPTED',
-    vehicleType: 'Utilitaire',
-    assignmentDate: '7 Dec 2025, 18:05',
-    notes: 'Prevoir sangles et couverture.',
-    pickupContact: {
-      name: 'Luc Moreau',
-      phone: '+33 6 50 45 12 12',
-    },
-    dropoffContact: {
-      name: 'Equipe EcoDeli',
-      phone: '+33 6 81 18 81 18',
-    },
-    packageType: 'Palette bois',
-    weight: '220 kg',
-    timeline: syncTimelineWithStatus(
-      [
-        {
-          status: 'ACCEPTED',
-          label: 'Mission acceptee',
-          dateLabel: '7 Dec 2025, 18:05',
-          completed: true,
-        },
-        {
-          status: 'PICKED_UP',
-          label: 'Collecte prevue',
-          dateLabel: 'Demain • 07:30',
-          completed: false,
-        },
-        {
-          status: 'IN_TRANSIT',
-          label: 'En cours de livraison',
-          dateLabel: 'Demain • 11:00',
-          completed: false,
-        },
-        {
-          status: 'DELIVERED',
-          label: 'Livraison effectuee',
-          dateLabel: 'Demain • 20:00',
-          completed: false,
-        },
-      ],
-      'ACCEPTED',
-    ),
-  },
-  'DLV-204': {
-    id: 'DLV-204',
-    title: 'Mode eco Paris → Reims',
-    clientName: 'Maison Mireille',
-    pickupAddress: '21 Rue du Faubourg Saint-Denis, 75010 Paris',
-    dropoffAddress: '8 Rue de Vesle, 51100 Reims',
-    pickupWindow: 'Hier • 11:00 - 12:00',
-    dropoffWindow: 'Hier • 16:00 - 18:00',
-    distanceKm: 145,
-    earnings: 95,
-    status: 'DELIVERED',
-    vehicleType: 'Voiture electrique',
-    assignmentDate: '6 Dec 2025, 10:10',
-    pickupContact: {
-      name: 'Helene Girard',
-      phone: '+33 6 91 33 45 21',
-    },
-    dropoffContact: {
-      name: 'Boutique Mireille',
-      phone: '+33 6 01 45 22 11',
-    },
-    packageType: 'Cartons textiles',
-    weight: '35 kg',
-    timeline: syncTimelineWithStatus(
-      [
-        {
-          status: 'ACCEPTED',
-          label: 'Mission acceptee',
-          dateLabel: '6 Dec 2025, 10:10',
-          completed: true,
-        },
-        {
-          status: 'PICKED_UP',
-          label: 'Colis collecte',
-          dateLabel: '7 Dec 2025, 11:05',
-          completed: true,
-        },
-        {
-          status: 'IN_TRANSIT',
-          label: 'En cours de livraison',
-          dateLabel: '7 Dec 2025, 12:00',
-          completed: true,
-        },
-        {
-          status: 'DELIVERED',
-          label: 'Livraison effectuee',
-          dateLabel: '7 Dec 2025, 16:20',
-          completed: true,
-        },
-      ],
-      'DELIVERED',
-    ),
-  },
+    packageType: payload.packageType ?? payload.packageCategory ?? payload.parcelDescription ?? 'Marchandise',
+    weight: formatWeight(weightValue),
+    instructions: payload.instructions ?? payload.notes ?? base.notes,
+    timeline: mapTimeline(payload.timeline, base.status),
+  };
+};
+
+export const fetchCourierDeliveries = async (): Promise<CourierDelivery[]> => {
+  try {
+    const { data } = await httpClient.get<PaginatedResponse<CourierDeliveryResponse>>(
+      '/deliveries',
+      { params: { assignedToMe: true, page: 0, size: 50, sort: 'assignedAt,desc' } },
+    );
+
+    return (data.content ?? []).map(mapDeliveryBase);
+  } catch (error) {
+    console.error('Failed to fetch courier deliveries', error);
+    throw new Error('Impossible de récupérer les livraisons en cours');
+  }
 };
 
 export const fetchCourierDeliveryDetail = async (
   deliveryId: string,
 ): Promise<CourierDeliveryDetail> => {
-  await delay();
-  const detail = MOCK_COURIER_DELIVERY_DETAILS[deliveryId];
-  if (!detail) {
-    throw new Error('Livraison introuvable');
+  try {
+    const { data } = await httpClient.get<CourierDeliveryDetailResponse>(
+      `/deliveries/${deliveryId}`,
+    );
+    return mapDeliveryDetail(data);
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      throw new Error('Livraison introuvable');
+    }
+    console.error('Failed to fetch courier delivery detail', error);
+    throw new Error('Impossible de récupérer les détails de la livraison');
   }
-  return { ...detail };
 };
 
-export const advanceCourierDeliveryStatus = async (
-  deliveryId: string,
-): Promise<CourierDeliveryDetail> => {
-  await delay();
-  const detail = MOCK_COURIER_DELIVERY_DETAILS[deliveryId];
-  if (!detail) {
-    throw new Error('Livraison introuvable');
+export const advanceCourierDeliveryStatus = async ({
+  deliveryId,
+  nextStatus,
+}: AdvanceCourierDeliveryStatusInput): Promise<CourierDeliveryDetail> => {
+  if (!nextStatus) {
+    throw new Error('Statut cible manquant pour la livraison');
   }
 
-  const currentIndex = STATUS_FLOW.indexOf(detail.status);
-  if (currentIndex === -1) {
-    throw new Error('Statut inconnu');
+  try {
+    const { data } = await httpClient.patch<CourierDeliveryDetailResponse>(
+      `/deliveries/${deliveryId}/status`,
+      { status: nextStatus },
+    );
+    return mapDeliveryDetail(data);
+  } catch (error) {
+    if (isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        throw new Error('Livraison introuvable');
+      }
+      if (error.response?.status === 409) {
+        const message = (error.response?.data as { message?: string })?.message;
+        throw new Error(message ?? 'Le statut de la livraison est déjà à jour');
+      }
+    }
+
+    console.error('Failed to advance courier delivery status', error);
+    throw new Error('Impossible de mettre à jour le statut de la livraison');
   }
-
-  if (currentIndex === STATUS_FLOW.length - 1) {
-    return { ...detail };
-  }
-
-  const nextStatus = STATUS_FLOW[currentIndex + 1];
-  detail.status = nextStatus;
-  detail.timeline = syncTimelineWithStatus(detail.timeline, nextStatus);
-
-  const delivery = MOCK_COURIER_DELIVERIES.find((item) => item.id === deliveryId);
-  if (delivery) {
-    delivery.status = nextStatus;
-  }
-
-  return { ...detail };
 };

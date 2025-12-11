@@ -3,10 +3,23 @@ import { Box, Card, CardContent, CardHeader, Typography } from '@mui/material';
 
 interface AnnouncementBudgetCardProps {
   amount: number;
+  currency?: string;
   note?: string;
 }
 
-export const AnnouncementBudgetCard = ({ amount, note = 'Prix convenu' }: AnnouncementBudgetCardProps) => (
+const formatCurrency = (value: number, currency: string) =>
+  new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+
+export const AnnouncementBudgetCard = ({
+  amount,
+  currency = 'EUR',
+  note = 'Prix convenu',
+}: AnnouncementBudgetCardProps) => (
   <Card
     elevation={0}
     sx={{ borderRadius: 3, border: (theme) => `1px solid ${theme.palette.divider}` }}
@@ -33,7 +46,7 @@ export const AnnouncementBudgetCard = ({ amount, note = 'Prix convenu' }: Announ
         </Box>
         <Box>
           <Typography variant="h4" color="success.main">
-            {amount.toFixed(2)} €
+            {formatCurrency(amount, currency)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {note}

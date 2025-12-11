@@ -27,23 +27,14 @@ import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettin
 import ecoDeliLogoUrl from "../../../assets/EcoDeli-Logo.svg?url";
 
 import { useAuth } from "../../../features/auth/context/AuthContext";
-import type { UserRole } from "../../../features/auth/context/AuthContext";
+import { useAppNavigation } from "../../hooks/useAppNavigation";
+import type { AppNavigationIconKey } from "../../api/appNavigation";
 
-const navLinks = [
-  { label: "Clients", path: "/client/dashboard", icon: PeopleAltOutlinedIcon },
-  { label: "Livreurs", path: "/courier/devenir-livreur", icon: LocalShippingOutlinedIcon },
-  { label: "Commerçants", path: "/merchant/devenir-commercant", icon: StorefrontOutlinedIcon },
-  { label: "Prestataire", path: "/provider/devenir-prestataire", icon: HandshakeOutlinedIcon },
-];
-
-const brand = {
-  label: "EcoDeli",
-};
-
-const notificationRoutes: Partial<Record<UserRole, string>> = {
-  CLIENT: "/client/notifications",
-  MERCHANT: "/merchant/notifications",
-  PROVIDER: "/provider/notifications",
+const navLinkIconFactory: Record<AppNavigationIconKey, typeof PeopleAltOutlinedIcon> = {
+  client: PeopleAltOutlinedIcon,
+  courier: LocalShippingOutlinedIcon,
+  merchant: StorefrontOutlinedIcon,
+  provider: HandshakeOutlinedIcon,
 };
 
 const HeaderProfileMenu = () => {
@@ -105,7 +96,7 @@ const HeaderProfileMenu = () => {
         <MenuItem
           onClick={() => {
             handleClose();
-            logout();
+            void logout();
           }}
         >
           <LogoutOutlinedIcon fontSize="small" style={{ marginRight: 8 }} />
@@ -119,9 +110,15 @@ const HeaderProfileMenu = () => {
 export const AppHeader = () => {
   const { isAuthenticated, login, user } = useAuth();
   const navigate = useNavigate();
+  const { data: navigationData } = useAppNavigation();
+
+  const navLinks = navigationData?.navLinks ?? [];
+  const brandLabel = navigationData?.brand.label ?? "EcoDeli";
+  const notificationRoutes = navigationData?.notificationRoutes;
+  const notificationBadgeCount = navigationData?.notificationBadgeCount ?? 0;
 
   const notificationPath = useMemo(() => {
-    if (!user) {
+    if (!user || !notificationRoutes) {
       return null;
     }
     for (const role of user.roles) {
@@ -131,7 +128,7 @@ export const AppHeader = () => {
       }
     }
     return null;
-  }, [user]);
+  }, [notificationRoutes, user]);
 
   const handleNotificationsClick = () => {
     if (notificationPath) {
@@ -175,7 +172,7 @@ export const AppHeader = () => {
                   lineHeight={1}
                   color="primary.main"
                 >
-                  {brand.label}
+                  {brandLabel}
                 </Typography>
               
               </Box>
@@ -188,23 +185,26 @@ export const AppHeader = () => {
             alignItems="center"
             sx={{ display: { xs: "none", md: "flex" }, flexGrow: 1 }}
           >
-            {navLinks.map((link) => (
-              <Button
-                key={link.path}
-                component={RouterLink}
-                to={link.path}
-                variant="outlined"
-                color="primary"
-                startIcon={<link.icon fontSize="small" />}
-                sx={{
-                  fontWeight: 700,
-                  textTransform: "none",
-                  borderRadius: 999,
-                }}
-              >
-                {link.label}
-              </Button>
-            ))}
+            {navLinks.map((link) => {
+              const IconComponent = navLinkIconFactory[link.icon];
+              return (
+                <Button
+                  key={link.path}
+                  component={RouterLink}
+                  to={link.path}
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<IconComponent fontSize="small" />}
+                  sx={{
+                    fontWeight: 700,
+                    textTransform: "none",
+                    borderRadius: 999,
+                  }}
+                >
+                  {link.label}
+                </Button>
+              );
+            })}
           </Stack>
 
           <Button
@@ -250,7 +250,7 @@ export const AppHeader = () => {
                 onClick={handleNotificationsClick}
                 disabled={!notificationPath}
               >
-                <Badge badgeContent={3} color="error">
+                <Badge badgeContent={notificationBadgeCount} color="error">
                   <NotificationsNoneOutlinedIcon />
                 </Badge>
               </IconButton>
@@ -276,7 +276,9 @@ export const AppHeader = () => {
                   textTransform: "none",
                   fontWeight: 700,
                 }}
-                onClick={() => login()}
+                onClick={() => {
+                  void login();
+                }}
               >
                 Se connecter
               </Button>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Avatar, Box, Button, Chip, Snackbar, Stack, Typography } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -14,98 +14,20 @@ import { AdminInfoList } from '../components/AdminInfoList';
 import { AdminActivityList, type AdminActivityItem } from '../components/AdminActivityList';
 import { AdminCreateCampaignDialog, type CreateCampaignPayload } from '../components/AdminCreateCampaignDialog';
 import { exportAdminFlowsCsv } from '../utils/exportAdminFlowsCsv';
+import {
+  type AdminAnnouncementsActivityRecord,
+  type AdminFlowRow,
+  type AdminFlowType,
+  type AdminOverviewStat,
+  type AdminPlanningSnapshotItem,
+} from '../api/adminAnnouncementsDeliveries';
+import { useAdminAnnouncementsDeliveriesData } from '../hooks/useAdminAnnouncementsDeliveries';
 
-const overviewStats = [
-  { label: 'Campagnes actives', value: 12, helper: '4 en préparation' },
-  { label: 'Livraisons du jour', value: 486, helper: '+9% vs semaine dernière' },
-  { label: 'Taux de succès', value: '96,2%', helper: 'annulations < 3%' },
-  { label: 'SLA moyen', value: '78 min', helper: 'objectif < 90 min' },
-];
-
-type FlowType = 'announcement' | 'delivery';
+type FlowType = AdminFlowType;
 type FlowTypeFilter = 'all' | FlowType;
 type StatusFilter = 'all' | AdminStatus;
 
-interface FlowRow {
-  id: string;
-  type: FlowType;
-  title: string;
-  merchant: string;
-  zone: string;
-  window: string;
-  status: AdminStatus;
-  volume: string;
-  couriers: number;
-}
-
-const flowRows: FlowRow[] = [
-  {
-    id: 'ANN-1042',
-    type: 'announcement',
-    title: 'EcoMarket • Fête locale',
-    merchant: 'EcoMarket Dijon',
-    zone: 'Dijon & agglomération',
-    window: '12 déc • 08h-13h',
-    status: 'scheduled',
-    volume: '74 colis',
-    couriers: 8,
-  },
-  {
-    id: 'ANN-1036',
-    type: 'announcement',
-    title: 'BioDistrict • Fin d’année',
-    merchant: 'BioDistrict Paris 15',
-    zone: 'Paris intra-muros',
-    window: '11 déc • 14h-20h',
-    status: 'active',
-    volume: '128 colis',
-    couriers: 14,
-  },
-  {
-    id: 'DLV-77231',
-    type: 'delivery',
-    title: 'Lot n°43 - Premium',
-    merchant: 'Maison Verde',
-    zone: 'Lyon Est',
-    window: 'En cours (ETA 17h12)',
-    status: 'delayed',
-    volume: '32 colis',
-    couriers: 5,
-  },
-  {
-    id: 'DLV-77221',
-    type: 'delivery',
-    title: 'Suivi express - Nord',
-    merchant: 'Greenify',
-    zone: 'Lille • HDF',
-    window: 'Livré 10 déc',
-    status: 'delivered',
-    volume: '58 colis',
-    couriers: 6,
-  },
-  {
-    id: 'ANN-1029',
-    type: 'announcement',
-    title: 'Outlet durable',
-    merchant: 'Upcycle Store',
-    zone: 'Marseille littoral',
-    window: '14 déc • 10h-19h',
-    status: 'review',
-    volume: '92 colis',
-    couriers: 11,
-  },
-  {
-    id: 'DLV-77198',
-    type: 'delivery',
-    title: 'Régulier J+1',
-    merchant: 'EcoMarket Toulouse',
-    zone: 'Toulouse métropole',
-    window: 'Annulé (incident météo)',
-    status: 'cancelled',
-    volume: '40 colis',
-    couriers: 7,
-  },
-];
+type FlowRow = AdminFlowRow;
 
 const statusFilters: AdminFilterOption<StatusFilter>[] = [
   { label: 'Tous les statuts', value: 'all' },
@@ -122,32 +44,9 @@ const typeFilters: AdminFilterOption<FlowTypeFilter>[] = [
   { label: 'Livraisons', value: 'delivery' },
 ];
 
-const planningSnapshot = [
-  { label: 'Fenêtres critiques', value: '3', helper: 'ETA < 90 min' },
-  { label: 'Campagnes multi-villes', value: '5', helper: '13 hubs concernés' },
-  { label: 'Volume total J+2', value: '1 230 colis', helper: '+18% vs J+1' },
-];
-
-const liveActivity: AdminActivityItem[] = [
-  {
-    id: 'activity-10',
-    title: 'Greenify - retard météo',
-    description: 'Recalage des créneaux clients terminé.',
-    timestamp: 'Il y a 8 min',
-  },
-  {
-    id: 'activity-11',
-    title: 'Maison Verde - lot 43',
-    description: 'Point de contrôle validé (hub 2).',
-    timestamp: 'Il y a 25 min',
-  },
-  {
-    id: 'activity-12',
-    title: 'BioDistrict - renfort',
-    description: '2 livreurs supplémentaires affectés.',
-    timestamp: 'Il y a 1 h',
-  },
-];
+const mapActivityToAdminItem = (activity: AdminAnnouncementsActivityRecord): AdminActivityItem => ({
+  ...activity,
+});
 
 const getFlowIcon = (type: FlowType) => {
   if (type === 'delivery') {
@@ -223,12 +122,34 @@ const flowColumns: AdminTableColumn<FlowRow>[] = [
 ];
 
 export const AdminAnnouncementsDeliveriesPage = () => {
-  const [rows, setRows] = useState<FlowRow[]>(flowRows);
+  const { data } = useAdminAnnouncementsDeliveriesData();
+  const [rows, setRows] = useState<FlowRow[]>([]);
   const [typeFilter, setTypeFilter] = useState<FlowTypeFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [openCreate, setOpenCreate] = useState(false);
   const [createdSnack, setCreatedSnack] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (data?.flowRows) {
+      setRows(data.flowRows);
+    }
+  }, [data?.flowRows]);
+
+  const overviewStats = useMemo<AdminOverviewStat[]>(
+    () => data?.overviewStats ?? [],
+    [data],
+  );
+
+  const planningSnapshot = useMemo<AdminPlanningSnapshotItem[]>(
+    () => data?.planningSnapshot ?? [],
+    [data],
+  );
+
+  const liveActivity = useMemo<AdminActivityItem[]>(
+    () => (data?.liveActivity ?? []).map(mapActivityToAdminItem),
+    [data],
+  );
 
   const filteredRows = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();

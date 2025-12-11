@@ -199,7 +199,7 @@ export const CourierAvailableAnnouncementsPage = () => {
           <Alert severity={snackbar.severity} onClose={closeSnackbar} variant="filled" sx={{ width: '100%' }}>
             {snackbar.message}
           </Alert>
-        ) : null}
+        ) : undefined}
       </Snackbar>
     </Box>
   );

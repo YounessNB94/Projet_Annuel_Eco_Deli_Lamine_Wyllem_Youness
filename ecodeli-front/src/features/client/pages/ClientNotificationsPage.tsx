@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, type ReactElement } from 'react';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
@@ -14,6 +14,13 @@ import type {
 import { NotificationCenter } from '../../../shared/components/notifications/NotificationCenter';
 import { useNotificationFeed } from '../../../shared/hooks/useNotificationFeed';
 import { clientNotificationCategories } from '../data/notificationCategories';
+import { useClientNotificationFeed } from '../hooks/useClientNotificationFeed';
+import { useClientNotificationActivity } from '../hooks/useClientNotificationActivity';
+import type {
+  ClientNotificationIconKey,
+  ClientNotificationRecord,
+  ClientNotificationActivityRecord,
+} from '../api/clientNotifications';
 
 type ClientNotificationFilter =
   | 'all'
@@ -25,88 +32,14 @@ type ClientNotificationFilter =
   | 'Support'
   | 'Compte & sécurité';
 
-const clientNotificationsSeed: NotificationFeedItem[] = [
-  {
-    id: 'client-notif-1',
-    title: 'Commande CMD-842 confirmée',
-    message: 'Le livreur récupère votre commande dans 12 minutes.',
-    timestamp: 'Il y a 5 min',
-    source: 'Commande & livraison',
-    category: 'Suivi de commande',
-    severity: 'warning',
-    icon: <LocalShippingOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'client-notif-2',
-    title: 'Nouvelle estimation d’arrivée',
-    message: 'Le créneau de livraison est maintenant prévu entre 18 h 10 et 18 h 25.',
-    timestamp: 'Il y a 14 min',
-    source: 'Suivi & ETA',
-    category: 'Temps réel',
-    severity: 'info',
-    icon: <AccessTimeOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'client-notif-3',
-    title: 'Paiement sécurisé',
-    message: 'Votre paiement de 42,50 € a été validé. Reçu disponible.',
-    timestamp: 'Il y a 32 min',
-    source: 'Paiement',
-    category: 'Facturation',
-    severity: 'success',
-    icon: <CreditCardOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'client-notif-4',
-    title: 'Réponse du support',
-    message: 'Nous avons mis à jour votre créneau de livraison comme demandé.',
-    timestamp: 'Il y a 1 h',
-    source: 'Support',
-    category: 'Ticket #SUP-204',
-    severity: 'info',
-    icon: <SupportAgentOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'client-notif-5',
-    title: 'Nouvelle connexion détectée',
-    message: 'Connexion depuis un nouvel appareil à Lyon. Vérifiez si c’était vous.',
-    timestamp: 'Il y a 3 h',
-    source: 'Compte & sécurité',
-    category: 'Sécurité',
-    severity: 'error',
-    icon: <SecurityOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'client-notif-6',
-    title: 'Offre préférentielle',
-    message: 'Profitez de -15 % sur votre prochaine livraison express avant dimanche.',
-    timestamp: 'Hier',
-    source: 'Annonces & offres',
-    category: 'Promotion',
-    icon: <CampaignOutlinedIcon fontSize="small" />,
-  },
-];
-
-const clientActivityLog: NotificationActivityItem[] = [
-  {
-    id: 'client-activity-1',
-    title: 'Push mobile livré',
-    description: 'Taux d’ouverture 64 % sur la dernière campagne.',
-    timestamp: 'Aujourd’hui 09:02',
-  },
-  {
-    id: 'client-activity-2',
-    title: 'Emails transactionnels',
-    description: 'Temps de délivrance moyen 48 secondes.',
-    timestamp: 'Hier 21:18',
-  },
-  {
-    id: 'client-activity-3',
-    title: 'Canal SMS',
-    description: 'Aucun échec sur les 120 derniers envois.',
-    timestamp: 'Hier 17:40',
-  },
-];
+const notificationIconFactory: Record<ClientNotificationIconKey, () => ReactElement> = {
+  orders: () => <LocalShippingOutlinedIcon fontSize="small" />,
+  eta: () => <AccessTimeOutlinedIcon fontSize="small" />,
+  payment: () => <CreditCardOutlinedIcon fontSize="small" />,
+  support: () => <SupportAgentOutlinedIcon fontSize="small" />,
+  security: () => <SecurityOutlinedIcon fontSize="small" />,
+  campaign: () => <CampaignOutlinedIcon fontSize="small" />,
+};
 
 const clientFilterOptions: NotificationFilterOption<ClientNotificationFilter>[] = [
   { label: 'Toutes', value: 'all' },
@@ -119,7 +52,31 @@ const clientFilterOptions: NotificationFilterOption<ClientNotificationFilter>[] 
   { label: 'Sécurité', value: 'Compte & sécurité' },
 ];
 
+const mapNotificationToFeedItem = (notification: ClientNotificationRecord): NotificationFeedItem => ({
+  id: notification.id,
+  title: notification.title,
+  message: notification.message,
+  timestamp: notification.timestamp,
+  source: notification.source,
+  category: notification.category,
+  severity: notification.severity,
+  icon: notificationIconFactory[notification.icon](),
+});
+
 export const ClientNotificationsPage = () => {
+  const { data: notificationFeed = [] } = useClientNotificationFeed();
+  const { data: notificationActivity = [] } = useClientNotificationActivity();
+
+  const mappedNotifications = useMemo<NotificationFeedItem[]>(
+    () => notificationFeed.map(mapNotificationToFeedItem),
+    [notificationFeed],
+  );
+
+  const activityItems = useMemo<NotificationActivityItem[]>(
+    () => notificationActivity.map((activity: ClientNotificationActivityRecord) => ({ ...activity })),
+    [notificationActivity],
+  );
+
   const {
     items,
     filteredItems,
@@ -129,6 +86,7 @@ export const ClientNotificationsPage = () => {
     setVisibility,
     searchTerm,
     setSearchTerm,
+    setItems,
     markAsRead,
     dismiss,
     markAllAsRead,
@@ -136,9 +94,13 @@ export const ClientNotificationsPage = () => {
     unreadCount,
     totalCount,
   } = useNotificationFeed<ClientNotificationFilter>({
-    initialItems: clientNotificationsSeed,
+    initialItems: [],
     initialFilter: 'all',
   });
+
+  useEffect(() => {
+    setItems(mappedNotifications);
+  }, [mappedNotifications, setItems]);
 
   const criticalCount = useMemo(
     () => items.filter((item) => item.severity === 'error').length,
@@ -187,7 +149,7 @@ export const ClientNotificationsPage = () => {
       onMarkAsRead={markAsRead}
       onMarkAllRead={markAllAsRead}
       onClearAll={clearAll}
-      activityItems={clientActivityLog}
+      activityItems={activityItems}
       activityTitle="Historique des canaux"
       activitySubtitle="Diffusions automatiques et reprises"
       categoriesTitle="Catégories d’alertes"

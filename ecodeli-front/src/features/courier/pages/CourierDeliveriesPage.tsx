@@ -29,6 +29,8 @@ import { useCourierDeliveries } from '../hooks/useCourierDeliveries';
 import { useCourierAdvanceDeliveryStatus } from '../hooks/useCourierAdvanceDeliveryStatus';
 import { CourierDeliveryCard } from '../components/CourierDeliveryCard';
 
+const STATUS_FLOW: CourierDeliveryStatus[] = ['ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'DELIVERED'];
+
 const statusLabels: Record<CourierDeliveryStatus, string> = {
   ACCEPTED: 'Mission acceptee',
   PICKED_UP: 'Collecte effectuee',
@@ -134,9 +136,24 @@ export const CourierDeliveriesPage = () => {
     if (progressingId) {
       return;
     }
+
+    const delivery = data.find((item) => item.id === deliveryId);
+    if (!delivery) {
+      setSnackbar('Livraison introuvable.');
+      return;
+    }
+
+    const currentIndex = STATUS_FLOW.indexOf(delivery.status);
+    const nextStatus = currentIndex === -1 ? null : STATUS_FLOW[currentIndex + 1];
+
+    if (!nextStatus) {
+      setSnackbar('Cette livraison est deja finalisee.');
+      return;
+    }
+
     setProgressingId(deliveryId);
     try {
-      const updated = await mutateAsync(deliveryId);
+      const updated = await mutateAsync({ deliveryId, nextStatus });
       setSnackbar(`Statut mis a jour: ${statusLabels[updated.status]}`);
       pushTrackingEvent(updated);
       setTrackingDetail(updated);

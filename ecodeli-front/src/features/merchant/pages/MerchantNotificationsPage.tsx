@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, type ReactElement } from 'react';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
@@ -14,6 +14,13 @@ import type {
 import { NotificationCenter } from '../../../shared/components/notifications/NotificationCenter';
 import { useNotificationFeed } from '../../../shared/hooks/useNotificationFeed';
 import { merchantNotificationCategories } from '../data/notificationCategories';
+import { useMerchantNotificationFeed } from '../hooks/useMerchantNotificationFeed';
+import { useMerchantNotificationActivity } from '../hooks/useMerchantNotificationActivity';
+import type {
+  MerchantNotificationActivityRecord,
+  MerchantNotificationIconKey,
+  MerchantNotificationRecord,
+} from '../api/merchantNotifications';
 
 type MerchantNotificationFilter =
   | 'all'
@@ -25,88 +32,14 @@ type MerchantNotificationFilter =
   | 'Qualité & retours clients'
   | 'Compte & équipe';
 
-const merchantNotificationsSeed: NotificationFeedItem[] = [
-  {
-    id: 'merchant-notif-1',
-    title: 'Campagne "Bio Locale" prête à publier',
-    message: 'Validez le budget final avant 18 h pour activer la campagne.',
-    timestamp: 'Il y a 8 min',
-    source: 'Campagnes & annonces',
-    category: 'Activation',
-    severity: 'warning',
-    icon: <CampaignOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'merchant-notif-2',
-    title: 'Incident de livraison lot #LIV-247',
-    message: 'Deux colis signalés en retard par le hub de Bellecour.',
-    timestamp: 'Il y a 22 min',
-    source: 'Livraisons & exécution',
-    category: 'Retard',
-    severity: 'error',
-    icon: <LocalShippingOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'merchant-notif-3',
-    title: 'Versement #VRS-578 confirmé',
-    message: '6 430,00 € seront crédités sur votre compte sous 48 h.',
-    timestamp: 'Il y a 1 h',
-    source: 'Finance & facturation',
-    category: 'Paiement',
-    severity: 'success',
-    icon: <ReceiptLongOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'merchant-notif-4',
-    title: 'Avis client 4,8 ★',
-    message: 'Anaïs (Lyon) recommande votre offre click & collect.',
-    timestamp: 'Il y a 3 h',
-    source: 'Qualité & retours clients',
-    category: 'Satisfaction',
-    severity: 'info',
-    icon: <ThumbUpAltOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'merchant-notif-5',
-    title: 'Droits mis à jour pour Paul R.',
-    message: 'Le rôle Gestionnaire financier a été appliqué.',
-    timestamp: 'Hier',
-    source: 'Compte & équipe',
-    category: 'Accès',
-    icon: <GroupOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'merchant-notif-6',
-    title: 'Pic de volume prévu vendredi',
-    message: 'Préparez 20 % de capacité supplémentaire sur le créneau 17 h.',
-    timestamp: 'Hier 18:10',
-    source: 'Capacité & planning',
-    category: 'Prévision',
-    severity: 'warning',
-    icon: <EventBusyOutlinedIcon fontSize="small" />,
-  },
-];
-
-const merchantActivityLog: NotificationActivityItem[] = [
-  {
-    id: 'merchant-activity-1',
-    title: 'Webhook campagnes',
-    description: 'Test hebdomadaire réussi en 112 ms.',
-    timestamp: 'Aujourd’hui 07:45',
-  },
-  {
-    id: 'merchant-activity-2',
-    title: 'Canal SMS commerçants',
-    description: 'Taux de délivrabilité 99,2 % sur 24 h.',
-    timestamp: 'Hier 22:05',
-  },
-  {
-    id: 'merchant-activity-3',
-    title: 'API versements',
-    description: 'Quota journalier consommé à 63 %.',
-    timestamp: 'Hier 18:20',
-  },
-];
+const notificationIconFactory: Record<MerchantNotificationIconKey, () => ReactElement> = {
+  campaign: () => <CampaignOutlinedIcon fontSize="small" />,
+  logistics: () => <LocalShippingOutlinedIcon fontSize="small" />,
+  capacity: () => <EventBusyOutlinedIcon fontSize="small" />,
+  finance: () => <ReceiptLongOutlinedIcon fontSize="small" />,
+  quality: () => <ThumbUpAltOutlinedIcon fontSize="small" />,
+  account: () => <GroupOutlinedIcon fontSize="small" />,
+};
 
 const merchantFilterOptions: NotificationFilterOption<MerchantNotificationFilter>[] = [
   { label: 'Toutes', value: 'all' },
@@ -119,7 +52,33 @@ const merchantFilterOptions: NotificationFilterOption<MerchantNotificationFilter
   { label: 'Compte', value: 'Compte & équipe' },
 ];
 
+const mapNotificationToFeedItem = (
+  notification: MerchantNotificationRecord,
+): NotificationFeedItem => ({
+  id: notification.id,
+  title: notification.title,
+  message: notification.message,
+  timestamp: notification.timestamp,
+  source: notification.source,
+  category: notification.category,
+  severity: notification.severity,
+  icon: notificationIconFactory[notification.icon](),
+});
+
 export const MerchantNotificationsPage = () => {
+  const { data: notificationFeed = [] } = useMerchantNotificationFeed();
+  const { data: notificationActivity = [] } = useMerchantNotificationActivity();
+
+  const mappedNotifications = useMemo<NotificationFeedItem[]>(
+    () => notificationFeed.map(mapNotificationToFeedItem),
+    [notificationFeed],
+  );
+
+  const activityItems = useMemo<NotificationActivityItem[]>(
+    () => notificationActivity.map((activity: MerchantNotificationActivityRecord) => ({ ...activity })),
+    [notificationActivity],
+  );
+
   const {
     items,
     filteredItems,
@@ -129,6 +88,7 @@ export const MerchantNotificationsPage = () => {
     setVisibility,
     searchTerm,
     setSearchTerm,
+    setItems,
     markAsRead,
     dismiss,
     markAllAsRead,
@@ -136,9 +96,13 @@ export const MerchantNotificationsPage = () => {
     unreadCount,
     totalCount,
   } = useNotificationFeed<MerchantNotificationFilter>({
-    initialItems: merchantNotificationsSeed,
+    initialItems: [],
     initialFilter: 'all',
   });
+
+  useEffect(() => {
+    setItems(mappedNotifications);
+  }, [mappedNotifications, setItems]);
 
   const criticalCount = useMemo(
     () => items.filter((item) => item.severity === 'error').length,
@@ -182,7 +146,7 @@ export const MerchantNotificationsPage = () => {
       onMarkAsRead={markAsRead}
       onMarkAllRead={markAllAsRead}
       onClearAll={clearAll}
-      activityItems={merchantActivityLog}
+      activityItems={activityItems}
       activityTitle="Suivi des canaux"
       activitySubtitle="Tests automatisés et indicateurs temps réel"
       categoriesTitle="Guides d’alertes"

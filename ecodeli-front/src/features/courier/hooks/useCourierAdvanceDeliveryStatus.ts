@@ -1,11 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CourierDelivery, CourierDeliveryDetail } from '../api/courierDeliveries';
+import type {
+  AdvanceCourierDeliveryStatusInput,
+  CourierDelivery,
+  CourierDeliveryDetail,
+} from '../api/courierDeliveries';
 import { advanceCourierDeliveryStatus } from '../api/courierDeliveries';
 
 export const useCourierAdvanceDeliveryStatus = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<CourierDeliveryDetail, Error, string>({
+  return useMutation<CourierDeliveryDetail, Error, AdvanceCourierDeliveryStatusInput>({
     mutationFn: advanceCourierDeliveryStatus,
     onSuccess: (updated) => {
       queryClient.setQueryData<CourierDeliveryDetail | undefined>(

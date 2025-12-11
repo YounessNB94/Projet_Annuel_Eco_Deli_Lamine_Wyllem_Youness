@@ -1,82 +1,30 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import type { AnnouncementStatus } from '../api/clientAnnouncements';
-import type { DeliveryStatus } from '../api/clientDeliveries';
 import { DashboardStatCard } from '../components/dashboard/DashboardStatCard';
 import { DashboardSectionCard } from '../components/dashboard/DashboardSectionCard';
 import { DashboardEmptyState } from '../components/dashboard/DashboardEmptyState';
 import { DashboardAnnouncementItem } from '../components/dashboard/DashboardAnnouncementItem';
 import { DashboardDeliveryItem } from '../components/dashboard/DashboardDeliveryItem';
 import { DashboardPaymentItem } from '../components/dashboard/DashboardPaymentItem';
+import { useClientDashboard } from '../hooks/useClientDashboard';
+import type { ClientDashboardStatIconKey } from '../api/clientDashboard';
 
-const stats = [
-  { label: 'Annonces actives', value: 12, color: '#2E7D32', icon: <Inventory2OutlinedIcon /> },
-  { label: 'Livraisons en cours', value: 3, color: '#0277BD', icon: <LocalShippingOutlinedIcon /> },
-  { label: 'En attente de paiement', value: 2, color: '#F57C00', icon: <CreditCardOutlinedIcon /> },
-];
-
-const recentAnnouncements = [
-  {
-    id: 'ANN-001',
-    title: 'Colis Paris → Lyon',
-    type: 'Petite livraison',
-    deadline: '15 Dec 2025',
-    budget: '25€',
-    status: 'PUBLISHED' as AnnouncementStatus,
-  },
-  {
-    id: 'ANN-002',
-    title: 'Documents Marseille → Toulouse',
-    type: 'Document',
-    deadline: '10 Dec 2025',
-    budget: '15€',
-    status: 'ASSIGNED' as AnnouncementStatus,
-  },
-  {
-    id: 'ANN-003',
-    title: 'Palette Lille → Nantes',
-    type: 'Grande livraison',
-    deadline: '20 Dec 2025',
-    budget: '85€',
-    status: 'DRAFT' as AnnouncementStatus,
-  },
-];
-
-const activeDeliveries = [
-  {
-    id: 'DLV-001',
-    title: 'Paris → Lyon',
-    driver: 'Marie L.',
-    from: 'Paris 75001',
-    to: 'Lyon 69001',
-    estimatedTime: '2h 30min',
-    status: 'IN_TRANSIT' as DeliveryStatus,
-  },
-  {
-    id: 'DLV-002',
-    title: 'Bordeaux → Rennes',
-    driver: 'Thomas M.',
-    from: 'Bordeaux 33000',
-    to: 'Rennes 35000',
-    estimatedTime: '5h 15min',
-    status: 'PICKED_UP' as DeliveryStatus,
-  },
-];
-
-const pendingPayments = [
-  { id: 'PAY-001', title: 'Livraison Paris → Lyon', dueDate: '8 Dec 2025', amount: '25,00 €' },
-  { id: 'PAY-002', title: 'Livraison Marseille → Toulouse', dueDate: '10 Dec 2025', amount: '15,00 €' },
-];
+const statIconFactory: Record<ClientDashboardStatIconKey, () => ReactElement> = {
+  announcements: () => <Inventory2OutlinedIcon />,
+  deliveries: () => <LocalShippingOutlinedIcon />,
+  payments: () => <CreditCardOutlinedIcon />,
+};
 
 export const ClientDashboardPage = () => {
   const navigate = useNavigate();
+  const { data, isLoading, isError } = useClientDashboard();
 
   const headerSubtitle = useMemo(
     () => 'Bienvenue sur votre espace client EcoDeli',
@@ -87,6 +35,40 @@ export const ClientDashboardPage = () => {
   const handleSeeAnnouncements = () => navigate('/client/annonces');
   const handleSeeDeliveries = () => navigate('/client/livraisons');
   const handleSeePayments = () => navigate('/client/paiements');
+
+  if (isLoading && !data) {
+    return (
+      <Box sx={{ py: 6, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Chargement du tableau de bord…
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <Box sx={{ py: 6, textAlign: 'center' }}>
+        <Typography variant="h5" gutterBottom>
+          Impossible de charger le tableau de bord
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Réessayez dans quelques instants.
+        </Typography>
+      </Box>
+    );
+  }
+
+  const { stats, announcements: recentAnnouncements, deliveries: activeDeliveries, payments: pendingPayments } = data;
+
+  const pendingPaymentsSubtitle = useMemo(() => {
+    const count = pendingPayments.length;
+    if (count === 0) {
+      return 'Aucun paiement en attente';
+    }
+    return `${count} paiement${count > 1 ? 's' : ''} nécessitent votre attention`;
+  }, [pendingPayments.length]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -130,7 +112,13 @@ export const ClientDashboardPage = () => {
         }}
       >
         {stats.map((stat) => (
-          <DashboardStatCard key={stat.label} {...stat} />
+          <DashboardStatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            color={stat.color}
+            icon={statIconFactory[stat.icon]()}
+          />
         ))}
       </Box>
 
@@ -205,7 +193,7 @@ export const ClientDashboardPage = () => {
 
       <DashboardSectionCard
         title="Paiements en attente"
-        subtitle="2 paiements nécessitent votre attention"
+        subtitle={pendingPaymentsSubtitle}
         action={
           <Button variant="outlined" size="small" onClick={handleSeePayments}>
             Voir tous les paiements

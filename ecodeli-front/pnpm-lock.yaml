@@ -37,6 +37,9 @@ importers:
       jspdf:
         specifier: ^3.0.4
         version: 3.0.4
+      oidc-client-ts:
+        specifier: ^2.3.1
+        version: 2.4.1
       react:
         specifier: 19.2.1
         version: 19.2.1
@@ -749,6 +752,9 @@ packages:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
 
+  crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+
   css-line-break@2.1.0:
     resolution: {integrity: sha512-FHcKFCZcAha3LwfVBhCQbW2nCNbkZXn7KVUJcsT5/P8YmfsVja0FMPJr0B903j/E69HUphKiV9iQArX8SDYA4w==}
 
@@ -1060,6 +1066,9 @@ packages:
   jspdf@3.0.4:
     resolution: {integrity: sha512-dc6oQ8y37rRcHn316s4ngz/nOjayLF/FFxBF4V9zamQKRqXxyiH1zagkCdktdWhtoQId5K20xt1lB90XzkB+hQ==}
 
+  jwt-decode@3.1.2:
+    resolution: {integrity: sha512-UfpWE/VZn0iP50d8cz9NrZLM9lSWhcJ+0Gt/nm4by88UL+J1SiKN8/5dkjMmbEzwL2CAe+67GsegCbIKtbp75A==}
+
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
@@ -1190,6 +1199,10 @@ packages:
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
+
+  oidc-client-ts@2.4.1:
+    resolution: {integrity: sha512-IxlGMsbkZPsHJGCliWT3LxjUcYzmiN21656n/Zt2jDncZlBFc//cd8WqFF0Lt681UT3AImM57E6d4N53ziTCYA==}
+    engines: {node: '>=12.13.0'}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -2235,6 +2248,8 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
+  crypto-js@4.2.0: {}
+
   css-line-break@2.1.0:
     dependencies:
       utrie: 1.0.2
@@ -2541,6 +2556,8 @@ snapshots:
       dompurify: 3.3.1
       html2canvas: 1.4.1
 
+  jwt-decode@3.1.2: {}
+
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
@@ -2640,6 +2657,11 @@ snapshots:
   node-releases@2.0.27: {}
 
   object-assign@4.1.1: {}
+
+  oidc-client-ts@2.4.1:
+    dependencies:
+      crypto-js: 4.2.0
+      jwt-decode: 3.1.2
 
   optionator@0.9.4:
     dependencies:

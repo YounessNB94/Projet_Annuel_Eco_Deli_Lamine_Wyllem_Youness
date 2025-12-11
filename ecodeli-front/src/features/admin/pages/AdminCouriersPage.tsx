@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Avatar,
@@ -29,99 +29,13 @@ import {
   AdminFilterToolbar,
   type AdminFilterOption,
 } from "../components/AdminFilterToolbar";
-
-const courierMetrics = [
-  {
-    label: "Dossiers en attente",
-    value: 12,
-    helper: "dont 4 urgences",
-    icon: <ShieldOutlinedIcon fontSize="small" />,
-  },
-  {
-    label: "Validés cette semaine",
-    value: 38,
-    helper: "+8 vs semaine dernière",
-  },
-  { label: "Dossiers refusés", value: 5, helper: "2 pour documents expirés" },
-  {
-    label: "Temps moyen validation",
-    value: "3j 4h",
-    helper: "-12% vs objectif",
-  },
-];
-
-interface CourierRow {
-  id: string;
-  name: string;
-  company: string;
-  zone: string;
-  level: "Bronze" | "Argent" | "Or";
-  status: AdminStatus;
-  documents: {
-    verified: number;
-    total: number;
-  };
-  lastUpdate: string;
-  submittedAt: string;
-}
-
-const courierRows: CourierRow[] = [
-  {
-    id: "CR-541",
-    name: "Nadia Benali",
-    company: "NB Logistics",
-    zone: "Paris Ouest",
-    level: "Argent",
-    status: "pending",
-    documents: { verified: 3, total: 5 },
-    lastUpdate: "Il y a 15 min",
-    submittedAt: "09:12",
-  },
-  {
-    id: "CR-536",
-    name: "Yohan Pereira",
-    company: "YP Services",
-    zone: "Lyon Centre",
-    level: "Bronze",
-    status: "review",
-    documents: { verified: 4, total: 6 },
-    lastUpdate: "Il y a 42 min",
-    submittedAt: "08:31",
-  },
-  {
-    id: "CR-512",
-    name: "Sofiane Haddad",
-    company: "SH Delivery",
-    zone: "Marseille Sud",
-    level: "Argent",
-    status: "approved",
-    documents: { verified: 6, total: 6 },
-    lastUpdate: "Hier 18:04",
-    submittedAt: "17/11",
-  },
-  {
-    id: "CR-498",
-    name: "Carla Renard",
-    company: "Renard Courses",
-    zone: "Bordeaux",
-    level: "Or",
-    status: "approved",
-    documents: { verified: 7, total: 7 },
-    lastUpdate: "Hier 11:18",
-    submittedAt: "02/11",
-  },
-  {
-    id: "CR-522",
-    name: "Oumar N'Diaye",
-    company: "ON Express",
-    zone: "Lille Métropole",
-    level: "Bronze",
-    status: "rejected",
-    documents: { verified: 2, total: 5 },
-    lastUpdate: "Il y a 3 h",
-    submittedAt: "08/11",
-  },
-];
+import { useAdminCouriersData } from "../hooks/useAdminCouriers";
+import type {
+  AdminCourierActivityRecord,
+  AdminCourierMetric,
+  AdminCourierMetricIconKey,
+  AdminCourierRow,
+} from "../api/adminCouriers";
 
 type StatusFilter = "all" | AdminStatus;
 
@@ -133,26 +47,18 @@ const statusFilters: AdminFilterOption<StatusFilter>[] = [
   { label: "Refusés", value: "rejected" },
 ];
 
-const validationActivity: AdminActivityItem[] = [
-  {
-    id: "valid-1",
-    title: "Contrôle d’identité CR-541",
-    description: "Document recto verso en attente de validation manuelle.",
-    timestamp: "Il y a 10 min",
-  },
-  {
-    id: "valid-2",
-    title: "Permis expirant CR-522",
-    description: "Expiration dans 18 jours, relance envoyée.",
-    timestamp: "Il y a 1 h",
-  },
-  {
-    id: "valid-3",
-    title: "Attestation RC pro CR-536",
-    description: "Signature numérique validée automatiquement.",
-    timestamp: "Ce matin",
-  },
-];
+const metricIconFactory: Record<AdminCourierMetricIconKey, () => ReactElement> = {
+  shield: () => <ShieldOutlinedIcon fontSize="small" />,
+};
+
+const mapMetricToCard = (metric: AdminCourierMetric) => ({
+  ...metric,
+  icon: metric.icon ? metricIconFactory[metric.icon]() : undefined,
+});
+
+const mapActivityRecord = (activity: AdminCourierActivityRecord): AdminActivityItem => ({
+  ...activity,
+});
 
 const getInitials = (value: string) =>
   value
@@ -162,8 +68,8 @@ const getInitials = (value: string) =>
     .toUpperCase();
 
 const buildCourierColumns = (
-  onOpenDetail: (courier: CourierRow) => void
-): AdminTableColumn<CourierRow>[] => [
+  onOpenDetail: (courier: AdminCourierRow) => void
+): AdminTableColumn<AdminCourierRow>[] => [
   {
     key: "identity",
     label: "Livreur",
@@ -245,6 +151,7 @@ const buildCourierColumns = (
 ];
 
 export const AdminCouriersPage = () => {
+  const { data } = useAdminCouriersData();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -254,6 +161,13 @@ export const AdminCouriersPage = () => {
         navigate(`/admin/livreurs/${courier.id}`)
       ),
     [navigate]
+  );
+
+  const metrics = useMemo(() => (data?.metrics ?? []).map(mapMetricToCard), [data]);
+  const courierRows = useMemo<AdminCourierRow[]>(() => data?.couriers ?? [], [data]);
+  const validationActivity = useMemo<AdminActivityItem[]>(
+    () => (data?.validationActivity ?? []).map(mapActivityRecord),
+    [data],
   );
 
   const filteredCouriers = useMemo(() => {
@@ -296,7 +210,7 @@ export const AdminCouriersPage = () => {
           gridTemplateColumns: { xs: "repeat(auto-fit, minmax(220px, 1fr))" },
         }}
       >
-        {courierMetrics.map((metric) => (
+            {metrics.map((metric) => (
           <AdminStatCard key={metric.label} {...metric} />
         ))}
       </Box>

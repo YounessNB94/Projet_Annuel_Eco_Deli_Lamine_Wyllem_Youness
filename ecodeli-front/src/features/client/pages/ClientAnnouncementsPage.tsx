@@ -40,12 +40,25 @@ import { ClientAnnouncementEditDialog } from "../components/ClientAnnouncementEd
 import type { AnnouncementFormValues } from "../types/announcementForm";
 import { applyFormValuesToAnnouncement } from "../utils/announcementFormMapping";
 
-const formatDate = (isoDate: string) =>
-  new Date(isoDate).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+const formatDate = (isoDate: string) => {
+  const date = new Date(isoDate);
+  if (!isoDate || Number.isNaN(date.getTime())) {
+    return 'Date à confirmer';
+  }
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
+};
+
+const formatCurrency = (value: number, currency: string) =>
+  new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 
 export const ClientAnnouncementsPage = () => {
   const navigate = useNavigate();
@@ -252,8 +265,6 @@ export const ClientAnnouncementsPage = () => {
               <MenuItem value="ALL">Tous les statuts</MenuItem>
               <MenuItem value="DRAFT">Brouillon</MenuItem>
               <MenuItem value="PUBLISHED">Publiée</MenuItem>
-              <MenuItem value="ASSIGNED">Assignée</MenuItem>
-              <MenuItem value="COMPLETED">Terminée</MenuItem>
               <MenuItem value="CANCELLED">Annulée</MenuItem>
             </TextField>
 
@@ -392,7 +403,7 @@ export const ClientAnnouncementsPage = () => {
                           fontWeight={600}
                           color="success.main"
                         >
-                          {a.budget.toFixed(0)}€
+                          {formatCurrency(a.budget, a.currency)}
                         </Typography>
                       </TableCell>
                       <TableCell>

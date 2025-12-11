@@ -1,0 +1,1833 @@
+---
+openapi: 3.1.0
+components:
+  schemas:
+    AddressDto:
+      type: object
+      required:
+      - line1
+      - postalCode
+      - city
+      - countryCode
+      properties:
+        id:
+          type: integer
+          format: int64
+        label:
+          type: string
+          maxLength: 120
+        line1:
+          type: string
+          maxLength: 200
+          pattern: \S
+        line2:
+          type: string
+          maxLength: 200
+        postalCode:
+          type: string
+          maxLength: 20
+          pattern: \S
+        city:
+          type: string
+          maxLength: 120
+          pattern: \S
+        countryCode:
+          type: string
+          maxLength: 2
+          pattern: \S
+        latitude:
+          type: number
+          maximum: 90.0
+          minimum: -90.0
+        longitude:
+          type: number
+          maximum: 180.0
+          minimum: -180.0
+    AnnouncementAssignmentDto:
+      type: object
+      properties:
+        courierUserId:
+          type: integer
+          format: int64
+        courierEmail:
+          type: string
+        assignedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        note:
+          type: string
+    AnnouncementAssignmentRequestDto:
+      type: object
+      properties:
+        note:
+          type: string
+          maxLength: 500
+    AnnouncementCreateDto:
+      type: object
+      required:
+      - type
+      - title
+      - description
+      - fromAddressId
+      - toAddressId
+      - earliestAt
+      - latestAt
+      - budgetCents
+      - currency
+      properties:
+        type:
+          $ref: "#/components/schemas/AnnouncementType"
+        title:
+          type: string
+          maxLength: 160
+          pattern: \S
+        description:
+          type: string
+          maxLength: 2000
+          pattern: \S
+        fromAddressId:
+          type: integer
+          format: int64
+        toAddressId:
+          type: integer
+          format: int64
+        earliestAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        latestAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        budgetCents:
+          type: integer
+          exclusiveMinimum: 0
+          format: int64
+        currency:
+          type: string
+          maxLength: 3
+          pattern: \S
+        merchantCompanyId:
+          type: integer
+          format: int64
+    AnnouncementDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/AnnouncementType"
+        status:
+          $ref: "#/components/schemas/AnnouncementStatus"
+        title:
+          type: string
+        description:
+          type: string
+        fromAddress:
+          $ref: "#/components/schemas/AddressDto"
+        toAddress:
+          $ref: "#/components/schemas/AddressDto"
+        earliestAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        latestAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        budgetCents:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        updatedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+    AnnouncementStatus:
+      type: string
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - CANCELLED
+    AnnouncementType:
+      type: string
+      enum:
+      - PARCEL_TRANSPORT
+      - ON_DEMAND_SERVICE
+    AnnouncementUpdateDto:
+      type: object
+      required:
+      - type
+      - title
+      - description
+      - fromAddressId
+      - toAddressId
+      - earliestAt
+      - latestAt
+      - budgetCents
+      - currency
+      properties:
+        type:
+          $ref: "#/components/schemas/AnnouncementType"
+        title:
+          type: string
+          maxLength: 160
+          pattern: \S
+        description:
+          type: string
+          maxLength: 2000
+          pattern: \S
+        fromAddressId:
+          type: integer
+          format: int64
+        toAddressId:
+          type: integer
+          format: int64
+        earliestAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        latestAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        budgetCents:
+          type: integer
+          exclusiveMinimum: 0
+          format: int64
+        currency:
+          type: string
+          maxLength: 3
+          pattern: \S
+        merchantCompanyId:
+          type: integer
+          format: int64
+    AppUserStatus:
+      type: string
+      enum:
+      - PENDING
+      - ACTIVE
+      - SUSPENDED
+      - CLOSED
+    DayOfWeek:
+      type: string
+      enum:
+      - MONDAY
+      - TUESDAY
+      - WEDNESDAY
+      - THURSDAY
+      - FRIDAY
+      - SATURDAY
+      - SUNDAY
+    DocumentMetadataDto:
+      type: object
+      required:
+      - fileName
+      - mimeType
+      - sizeBytes
+      - sha256
+      - createdAt
+      - storageKey
+      properties:
+        id:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+          maxLength: 255
+          pattern: \S
+        mimeType:
+          type: string
+          maxLength: 128
+          pattern: \S
+        sizeBytes:
+          type: integer
+          format: int64
+        sha256:
+          type: string
+          maxLength: 64
+          pattern: \S
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        storageKey:
+          type: string
+          maxLength: 255
+          pattern: \S
+    DocumentType:
+      type: string
+      enum:
+      - COURIER_PROOF
+      - PROVIDER_PROOF
+      - CONTRACT
+      - INVOICE
+      - OTHER
+    DocumentUploadForm:
+      type: object
+      required:
+      - file
+      - fileName
+      - mimeType
+      properties:
+        file:
+          type: string
+          format: binary
+        fileName:
+          type: string
+          maxLength: 255
+          pattern: \S
+        mimeType:
+          type: string
+          maxLength: 128
+          pattern: \S
+        type:
+          $ref: "#/components/schemas/DocumentType"
+    LocalDate:
+      type: string
+      format: date
+      examples:
+      - 2022-03-10
+    LocalTime:
+      type: string
+      format: local-time
+      examples:
+      - 13:45:30.123456789
+      externalDocs:
+        description: As defined by 'partial-time' in RFC3339
+        url: https://www.rfc-editor.org/rfc/rfc3339.html#section-5.6
+    MerchantCompanyDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        merchantUserId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        siret:
+          type: string
+        vatNumber:
+          type: string
+        billingEmail:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+    MerchantCompanyUpdateDto:
+      type: object
+      required:
+      - name
+      - siret
+      properties:
+        name:
+          type: string
+          maxLength: 160
+          pattern: \S
+        siret:
+          type: string
+          pattern: "^[0-9]{14}$"
+        vatNumber:
+          type: string
+          maxLength: 32
+        billingEmail:
+          type: string
+          maxLength: 320
+    MerchantContractDraftDto:
+      type: object
+      required:
+      - startDate
+      - termsPdfDocumentId
+      properties:
+        startDate:
+          $ref: "#/components/schemas/LocalDate"
+        endDate:
+          $ref: "#/components/schemas/LocalDate"
+        termsPdfDocumentId:
+          type: integer
+          exclusiveMinimum: 0
+          format: int64
+    MerchantContractDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        merchantCompanyId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/MerchantContractStatus"
+        startDate:
+          $ref: "#/components/schemas/LocalDate"
+        endDate:
+          $ref: "#/components/schemas/LocalDate"
+        termsPdfDocumentId:
+          type: integer
+          format: int64
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        signedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        signedByUserId:
+          type: integer
+          format: int64
+        countersignedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        countersignedByAdminId:
+          type: integer
+          format: int64
+    MerchantContractSignDto:
+      type: object
+      required:
+      - contractId
+      properties:
+        contractId:
+          type: integer
+          format: int64
+        signatureNote:
+          type: string
+          maxLength: 512
+    MerchantContractStatus:
+      type: string
+      enum:
+      - DRAFT
+      - PENDING_SIGNATURE
+      - AWAITING_COUNTERSIGN
+      - APPROVED
+      - REJECTED
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T12:15:50-04:00
+    ProviderAssignmentDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/ProviderAssignmentStatus"
+        scheduledAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        completedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        clientName:
+          type: string
+        clientContact:
+          type: string
+    ProviderAssignmentStatus:
+      type: string
+      enum:
+      - ASSIGNED
+      - IN_PROGRESS
+      - COMPLETED
+      - CANCELLED
+    ProviderAssignmentStatusUpdateDto:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          $ref: "#/components/schemas/ProviderAssignmentStatus"
+    ProviderAttachmentAdminDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        providerUserId:
+          type: integer
+          format: int64
+        providerEmail:
+          type: string
+        type:
+          $ref: "#/components/schemas/ProviderAttachmentType"
+        status:
+          $ref: "#/components/schemas/ValidationStatus"
+        documentId:
+          type: integer
+          format: int64
+        submittedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        reviewedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        reviewedByAdminId:
+          type: integer
+          format: int64
+        rejectionReason:
+          type: string
+    ProviderAttachmentDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/ProviderAttachmentType"
+        status:
+          $ref: "#/components/schemas/ValidationStatus"
+        documentId:
+          type: integer
+          format: int64
+        submittedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        reviewedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        rejectionReason:
+          type: string
+    ProviderAttachmentReviewDto:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          $ref: "#/components/schemas/ValidationStatus"
+        reason:
+          type: string
+          maxLength: 512
+    ProviderAttachmentType:
+      type: string
+      enum:
+      - ID
+      - INSURANCE
+      - CERTIFICATE
+      - OTHER
+    ProviderAttachmentUploadForm:
+      type: object
+      required:
+      - file
+      - type
+      properties:
+        file:
+          type: string
+          format: binary
+        type:
+          $ref: "#/components/schemas/ProviderAttachmentType"
+        documentType:
+          $ref: "#/components/schemas/DocumentType"
+    ProviderAvailabilityDto:
+      type: object
+      required:
+      - startTime
+      - endTime
+      properties:
+        id:
+          type: integer
+          format: int64
+        dayOfWeek:
+          $ref: "#/components/schemas/DayOfWeek"
+        date:
+          $ref: "#/components/schemas/LocalDate"
+        startTime:
+          $ref: "#/components/schemas/LocalTime"
+        endTime:
+          $ref: "#/components/schemas/LocalTime"
+        timezone:
+          type: string
+          maxLength: 64
+        recurring:
+          type: boolean
+    ProviderAvailabilityUpdateDto:
+      type: object
+      required:
+      - slots
+      properties:
+        slots:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ProviderAvailabilityDto"
+    ProviderInvoiceDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/ProviderInvoiceStatus"
+        periodStart:
+          $ref: "#/components/schemas/OffsetDateTime"
+        periodEnd:
+          $ref: "#/components/schemas/OffsetDateTime"
+        totalCents:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        documentId:
+          type: integer
+          format: int64
+        issuedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+    ProviderInvoiceStatus:
+      type: string
+      enum:
+      - DRAFT
+      - ISSUED
+      - PAID
+      - CANCELLED
+    ProviderProfileAdminDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        email:
+          type: string
+        status:
+          $ref: "#/components/schemas/ValidationStatus"
+        bio:
+          type: string
+        skills:
+          type: string
+        hourlyRateCents:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        ibanMasked:
+          type: string
+        validatedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        validatedByAdminId:
+          type: integer
+          format: int64
+        rejectionReason:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        updatedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+    ProviderProfileDto:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/ValidationStatus"
+        bio:
+          type: string
+          maxLength: 500
+        skills:
+          type: string
+          maxLength: 255
+        hourlyRateCents:
+          type: integer
+          format: int64
+          minimum: 0
+        currency:
+          type: string
+          maxLength: 3
+        ibanMasked:
+          type: string
+          maxLength: 34
+        validatedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        validatedByAdminId:
+          type: integer
+          format: int64
+        rejectionReason:
+          type: string
+    ProviderProfileReviewDto:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          $ref: "#/components/schemas/ValidationStatus"
+        reason:
+          type: string
+          maxLength: 512
+    UserAddressDto:
+      type: object
+      required:
+      - address
+      properties:
+        userId:
+          type: integer
+          format: int64
+        address:
+          $ref: "#/components/schemas/AddressDto"
+        isDefault:
+          type: boolean
+    UserDeviceCreateDto:
+      type: object
+      required:
+      - platform
+      - onesignalPlayerId
+      properties:
+        platform:
+          type: string
+          maxLength: 32
+          pattern: \S
+        onesignalPlayerId:
+          type: string
+          maxLength: 128
+          pattern: \S
+    UserDeviceDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        platform:
+          type: string
+        onesignalPlayerId:
+          type: string
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        lastActiveAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+    UserDto:
+      type: object
+      required:
+      - keycloakUserId
+      - email
+      properties:
+        id:
+          type: integer
+          format: int64
+        keycloakUserId:
+          type: string
+          maxLength: 64
+          pattern: \S
+        email:
+          type: string
+          maxLength: 320
+          pattern: \S
+        phone:
+          type: string
+          maxLength: 32
+        status:
+          $ref: "#/components/schemas/AppUserStatus"
+        createdAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        updatedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        profile:
+          $ref: "#/components/schemas/UserProfileDto"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserAddressDto"
+    UserProfileDto:
+      type: object
+      required:
+      - firstName
+      - lastName
+      - defaultLanguage
+      properties:
+        userId:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+          maxLength: 100
+          pattern: \S
+        lastName:
+          type: string
+          maxLength: 100
+          pattern: \S
+        birthDate:
+          $ref: "#/components/schemas/LocalDate"
+        defaultLanguage:
+          type: string
+          maxLength: 16
+          pattern: \S
+        tutorialShownAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+        tutorialCompletedAt:
+          $ref: "#/components/schemas/OffsetDateTime"
+    ValidationStatus:
+      type: string
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+  securitySchemes:
+    KEYCLOAK:
+      description: Authentication
+      type: openIdConnect
+      openIdConnectUrl: http://localhost:8081/realms/ecodeli/.well-known/openid-configuration
+paths:
+  /api/v1/admin/merchant-contracts/{contractId}/approve:
+    post:
+      parameters:
+      - name: contractId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantContractDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Approve
+      tags:
+      - Admin Merchant Contract Resource
+      security:
+      - KEYCLOAK:
+        - ADMIN
+  /api/v1/admin/providers:
+    get:
+      parameters:
+      - name: pendingOnly
+        in: query
+        schema:
+          type: boolean
+          default: false
+      - name: status
+        in: query
+        schema:
+          $ref: "#/components/schemas/ValidationStatus"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderProfileAdminDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Providers
+      tags:
+      - Admin Provider Resource
+      security:
+      - KEYCLOAK:
+        - ADMIN
+  /api/v1/admin/providers/attachments:
+    get:
+      parameters:
+      - name: pendingOnly
+        in: query
+        schema:
+          type: boolean
+          default: false
+      - name: status
+        in: query
+        schema:
+          $ref: "#/components/schemas/ValidationStatus"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderAttachmentAdminDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Attachments
+      tags:
+      - Admin Provider Resource
+      security:
+      - KEYCLOAK:
+        - ADMIN
+  /api/v1/admin/providers/attachments/{attachmentId}:
+    patch:
+      parameters:
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderAttachmentReviewDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderAttachmentAdminDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Review Attachment
+      tags:
+      - Admin Provider Resource
+      security:
+      - KEYCLOAK:
+        - ADMIN
+  /api/v1/admin/providers/attachments/{attachmentId}/download:
+    get:
+      parameters:
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Download Attachment
+      tags:
+      - Admin Provider Resource
+      security:
+      - KEYCLOAK:
+        - ADMIN
+  /api/v1/admin/providers/{providerUserId}/status:
+    patch:
+      parameters:
+      - name: providerUserId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderProfileReviewDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderProfileAdminDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Review Profile
+      tags:
+      - Admin Provider Resource
+      security:
+      - KEYCLOAK:
+        - ADMIN
+  /api/v1/announcements:
+    get:
+      parameters:
+      - name: mine
+        in: query
+        schema:
+          type: boolean
+      - name: status
+        in: query
+        schema:
+          $ref: "#/components/schemas/AnnouncementStatus"
+      - name: type
+        in: query
+        schema:
+          $ref: "#/components/schemas/AnnouncementType"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnnouncementDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List
+      tags:
+      - Announcement Resource
+      security:
+      - KEYCLOAK: []
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Create
+      tags:
+      - Announcement Resource
+      security:
+      - KEYCLOAK:
+        - CLIENT
+        - MERCHANT
+  /api/v1/announcements/{announcementId}:
+    patch:
+      parameters:
+      - name: announcementId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Update
+      tags:
+      - Announcement Resource
+      security:
+      - KEYCLOAK:
+        - CLIENT
+        - MERCHANT
+  /api/v1/announcements/{announcementId}/assignments:
+    get:
+      parameters:
+      - name: announcementId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnnouncementAssignmentDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Assignments
+      tags:
+      - Announcement Resource
+      security:
+      - KEYCLOAK: []
+    post:
+      parameters:
+      - name: announcementId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementAssignmentRequestDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementAssignmentDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Assign
+      tags:
+      - Announcement Resource
+      security:
+      - KEYCLOAK:
+        - COURIER
+  /api/v1/announcements/{announcementId}/cancel:
+    post:
+      parameters:
+      - name: announcementId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Cancel
+      tags:
+      - Announcement Resource
+      security:
+      - KEYCLOAK:
+        - CLIENT
+        - MERCHANT
+  /api/v1/announcements/{announcementId}/publish:
+    post:
+      parameters:
+      - name: announcementId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Publish
+      tags:
+      - Announcement Resource
+      security:
+      - KEYCLOAK:
+        - CLIENT
+        - MERCHANT
+  /api/v1/documents:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DocumentUploadForm"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Upload
+      tags:
+      - Document Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/documents/{id}:
+    get:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentMetadataDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Metadata
+      tags:
+      - Document Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/documents/{id}/download:
+    get:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/octet-stream: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Download
+      tags:
+      - Document Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/merchants/me/company:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MerchantCompanyUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantCompanyDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Update Company
+      tags:
+      - Merchant Resource
+      security:
+      - KEYCLOAK:
+        - MERCHANT
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantCompanyDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Get Company
+      tags:
+      - Merchant Resource
+      security:
+      - KEYCLOAK:
+        - MERCHANT
+  /api/v1/merchants/me/contracts:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MerchantContractDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Contracts
+      tags:
+      - Merchant Resource
+      security:
+      - KEYCLOAK:
+        - MERCHANT
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MerchantContractDraftDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantContractDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Create Contract
+      tags:
+      - Merchant Resource
+      security:
+      - KEYCLOAK:
+        - MERCHANT
+  /api/v1/merchants/me/contracts/{contractId}/sign:
+    post:
+      parameters:
+      - name: contractId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MerchantContractSignDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MerchantContractDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Sign Contract
+      tags:
+      - Merchant Resource
+      security:
+      - KEYCLOAK:
+        - MERCHANT
+  /api/v1/providers/me/assignments:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderAssignmentDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Assignments
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/providers/me/assignments/{assignmentId}:
+    patch:
+      parameters:
+      - name: assignmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderAssignmentStatusUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderAssignmentDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Update Assignment Status
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/providers/me/attachments:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ProviderAttachmentUploadForm"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderAttachmentDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Upload Attachment
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderAttachmentDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Attachments
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/providers/me/attachments/{attachmentId}:
+    delete:
+      parameters:
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Delete Attachment
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/providers/me/availability:
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderAvailabilityUpdateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderAvailabilityDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Update Availability
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderAvailabilityDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Get Availability
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/providers/me/invoices:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderInvoiceDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Invoices
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/providers/me/invoices/{invoiceId}:
+    get:
+      parameters:
+      - name: invoiceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderInvoiceDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Get Invoice
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/providers/me/profile:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderProfileDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderProfileDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Update Profile
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderProfileDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Get Profile
+      tags:
+      - Provider Resource
+      security:
+      - KEYCLOAK:
+        - PROVIDER
+  /api/v1/users/me:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Me
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/users/me/addresses:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserAddressDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Addresses
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddressDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAddressDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Create Address
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/users/me/addresses/{addressId}:
+    patch:
+      parameters:
+      - name: addressId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddressDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddressDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Update Address
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+    delete:
+      parameters:
+      - name: addressId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Delete Address
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/users/me/addresses/{addressId}/default:
+    put:
+      parameters:
+      - name: addressId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAddressDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Set Default Address
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/users/me/devices:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserDeviceCreateDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDeviceDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Register Device
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserDeviceDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List Devices
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/users/me/devices/{deviceId}:
+    delete:
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Delete Device
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+  /api/v1/users/me/profile:
+    patch:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileDto"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Update Profile
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Get Profile
+      tags:
+      - User Resource
+      security:
+      - KEYCLOAK: []
+info:
+  title: Ecodeli API
+  version: 1.0-SNAPSHOT

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import {
   Box,
   Button,
@@ -15,12 +15,21 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
-
 import { AdminStatCard } from '../components/AdminStatCard';
 import { AdminSectionCard } from '../components/AdminSectionCard';
 import { AdminFilterToolbar, type AdminFilterOption } from '../components/AdminFilterToolbar';
 import { AdminNotificationList, type AdminNotificationItem } from '../components/AdminNotificationList';
 import { AdminActivityList, type AdminActivityItem } from '../components/AdminActivityList';
+import { useAdminNotificationFeed } from '../hooks/useAdminNotificationFeed';
+import { useAdminNotificationActivity } from '../hooks/useAdminNotificationActivity';
+
+type AdminNotificationIconKey = 'delivery' | 'campaign' | 'finance' | 'courier';
+
+type AdminNotificationRecord = Omit<AdminNotificationItem, 'icon'> & {
+  icon: AdminNotificationIconKey;
+};
+
+type AdminNotificationActivityRecord = AdminActivityItem;
 
 const notificationStats = [
   { label: 'Notifications non lues', value: 18, helper: '3 critiques' },
@@ -41,46 +50,23 @@ const filterOptions: AdminFilterOption<NotificationFilter>[] = [
   { label: 'Finance', value: 'finance' },
 ];
 
-const notificationsSeed: AdminNotificationItem[] = [
-  {
-    id: 'notif-1',
-    title: 'Retard livraison hub Lyon',
-    message: '2 créneaux dépassent de 18 min la SLA prévue.',
-    timestamp: 'Il y a 6 min',
-    source: 'Livraisons',
-    category: 'SLA',
-    severity: 'error',
-    icon: <LocalShippingOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'notif-2',
-    title: 'Campagne EcoMarket activée',
-    message: 'Dossier ANN-1045 : créneau 15 déc validé.',
-    timestamp: 'Il y a 25 min',
-    source: 'Campagnes',
-    category: 'Publication',
-    icon: <CampaignOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'notif-3',
-    title: 'Facture INV-2024-751 en retard',
-    message: '30 jours de retard - relance automatique programmée.',
-    timestamp: 'Il y a 1 h',
-    source: 'Finance',
-    category: 'Recouvrement',
-    severity: 'warning',
-    icon: <ReceiptLongOutlinedIcon fontSize="small" />,
-  },
-  {
-    id: 'notif-4',
-    title: 'Validation dossier CR-541',
-    message: 'Tous les documents sont approuvés, prêt pour activation.',
-    timestamp: 'Il y a 3 h',
-    source: 'Livreurs',
-    category: 'Onboarding',
-    icon: <PeopleAltOutlinedIcon fontSize="small" />,
-  },
-];
+const notificationIconFactory: Record<AdminNotificationIconKey, () => ReactElement> = {
+  delivery: () => <LocalShippingOutlinedIcon fontSize="small" />,
+  campaign: () => <CampaignOutlinedIcon fontSize="small" />,
+  finance: () => <ReceiptLongOutlinedIcon fontSize="small" />,
+  courier: () => <PeopleAltOutlinedIcon fontSize="small" />,
+};
+
+const mapNotificationToFeedItem = (notification: AdminNotificationRecord): AdminNotificationItem => ({
+  id: notification.id,
+  title: notification.title,
+  message: notification.message,
+  timestamp: notification.timestamp,
+  source: notification.source,
+  category: notification.category,
+  severity: notification.severity,
+  icon: notificationIconFactory[notification.icon](),
+});
 
 const mapFilterToCategory = (filter: NotificationFilter) => {
   switch (filter) {
@@ -97,32 +83,27 @@ const mapFilterToCategory = (filter: NotificationFilter) => {
   }
 };
 
-const maintenanceActivity: AdminActivityItem[] = [
-  {
-    id: 'maint-1',
-    title: 'Webhook notifications',
-    description: 'Test automatique hebdomadaire OK.',
-    timestamp: 'Il y a 2 h',
-  },
-  {
-    id: 'maint-2',
-    title: 'Canal email commerçants',
-    description: 'Temps de réponse moyen 118 ms.',
-    timestamp: 'Hier 22:15',
-  },
-  {
-    id: 'maint-3',
-    title: 'Centre de notifications mobile',
-    description: 'Mise à jour des priorités 2.x déployée.',
-    timestamp: 'Avant-hier',
-  },
-];
-
 export const AdminNotificationsPage = () => {
+  const { data: notificationFeed = [] } = useAdminNotificationFeed();
+  const { data: notificationActivity = [] } = useAdminNotificationActivity();
   const [filter, setFilter] = useState<NotificationFilter>('all');
   const [visibility, setVisibility] = useState<NotificationVisibility>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [notifications, setNotifications] = useState(notificationsSeed);
+  const [notifications, setNotifications] = useState<AdminNotificationItem[]>([]);
+
+  const mappedNotifications = useMemo<AdminNotificationItem[]>(
+    () => notificationFeed.map(mapNotificationToFeedItem),
+    [notificationFeed],
+  );
+
+  const activityItems = useMemo<AdminActivityItem[]>(
+    () => notificationActivity.map((activity: AdminNotificationActivityRecord) => ({ ...activity })),
+    [notificationActivity],
+  );
+
+  useEffect(() => {
+    setNotifications(mappedNotifications);
+  }, [mappedNotifications]);
 
   const filteredNotifications = useMemo(() => {
     const normalized = searchTerm.trim().toLowerCase();
@@ -245,7 +226,7 @@ export const AdminNotificationsPage = () => {
         </AdminSectionCard>
 
         <AdminSectionCard title="Journal de diffusion" subtitle="Santé des canaux">
-          <AdminActivityList items={maintenanceActivity} />
+          <AdminActivityList items={activityItems} />
         </AdminSectionCard>
       </Box>
     </Stack>
