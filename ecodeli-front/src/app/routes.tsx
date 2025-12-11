@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Typography } from '@mui/material';
 import { RootLayout } from './layouts/RootLayout';
+import { OidcCallback } from '../features/auth/components/OidcCallback';
+import { OidcSilentRenew } from '../features/auth/components/OidcSilentRenew';
 import { ClientLayout } from '../features/client/layout/ClientLayout';
 import { ClientDashboardPage } from '../features/client/pages/ClientDashboardPage';
 import { ClientAnnouncementsPage } from '../features/client/pages/ClientAnnouncementsPage';
@@ -57,6 +59,8 @@ const ComingSoonPage = ({ label }: { label: string }) => (
 export const AppRoutes = () => (
   <RootLayout>
     <Routes>
+      <Route path="/auth/callback" element={<OidcCallback />} />
+      <Route path="/auth/silent-renew" element={<OidcSilentRenew />} />
       <Route path="/" element={<Navigate to="/client/dashboard" replace />} />
       <Route path="/client" element={<Navigate to="/client/dashboard" replace />} />
 

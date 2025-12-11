@@ -21,6 +21,7 @@ interface UseNotificationFeedResult<TFilter extends string> {
   setVisibility: (value: NotificationVisibility) => void;
   searchTerm: string;
   setSearchTerm: (value: string) => void;
+  setItems: (items: NotificationFeedItem[]) => void;
   markAsRead: (id: string) => void;
   dismiss: (id: string) => void;
   markAllAsRead: () => void;
@@ -46,7 +47,7 @@ export const useNotificationFeed = <TFilter extends string>({
   filterPredicate = defaultFilterPredicate,
   searchKeys = ['title', 'message'],
 }: UseNotificationFeedOptions<TFilter>): UseNotificationFeedResult<TFilter> => {
-  const [items, setItems] = useState<NotificationFeedItem[]>(initialItems);
+  const [items, setItemsState] = useState<NotificationFeedItem[]>(initialItems);
   const [filter, setFilterState] = useState<TFilter>(initialFilter);
   const [visibility, setVisibilityState] = useState<NotificationVisibility>(initialVisibility);
   const [searchTerm, setSearchTermState] = useState('');
@@ -76,21 +77,25 @@ export const useNotificationFeed = <TFilter extends string>({
   }, [filter, filterPredicate, items, searchKeys, searchTerm, visibility]);
 
   const markAsRead = useCallback((id: string) => {
-    setItems((previous) =>
+    setItemsState((previous) =>
       previous.map((item) => (item.id === id ? { ...item, severity: undefined } : item)),
     );
   }, []);
 
   const dismiss = useCallback((id: string) => {
-    setItems((previous) => previous.filter((item) => item.id !== id));
+    setItemsState((previous) => previous.filter((item) => item.id !== id));
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setItems((previous) => previous.map((item) => ({ ...item, severity: undefined })));
+    setItemsState((previous) => previous.map((item) => ({ ...item, severity: undefined })));
   }, []);
 
   const clearAll = useCallback(() => {
-    setItems([]);
+    setItemsState([]);
+  }, []);
+
+  const setItems = useCallback((nextItems: NotificationFeedItem[]) => {
+    setItemsState(nextItems);
   }, []);
 
   const unreadCount = useMemo(() => items.filter((item) => !!item.severity).length, [items]);
@@ -105,6 +110,7 @@ export const useNotificationFeed = <TFilter extends string>({
     setVisibility,
     searchTerm,
     setSearchTerm,
+    setItems,
     markAsRead,
     dismiss,
     markAllAsRead,

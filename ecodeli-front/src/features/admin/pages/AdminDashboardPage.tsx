@@ -1,3 +1,4 @@
+import { useMemo, type ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Chip, Divider, Stack, Typography } from '@mui/material';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
@@ -10,75 +11,56 @@ import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsAc
 import { AdminStatCard } from '../components/AdminStatCard';
 import { AdminSectionCard } from '../components/AdminSectionCard';
 import { AdminActivityList, type AdminActivityItem } from '../components/AdminActivityList';
+import { useAdminDashboardData } from '../hooks/useAdminDashboard';
+import type {
+  AdminDashboardActivityIconKey,
+  AdminDashboardAlert,
+  AdminDashboardPendingCourier,
+  AdminDashboardStat,
+  AdminDashboardStatIconKey,
+} from '../api/adminDashboard';
 
-const stats = [
-  {
-    label: 'Livreurs en attente',
-    value: 8,
-    helper: '2 nouveaux dossiers reçus ce matin',
-    icon: <PeopleOutlineIcon fontSize="small" />,
-    trend: { label: '+12% vs hier', color: 'info' as const },
-  },
-  {
-    label: 'Validations traitées',
-    value: 24,
-    helper: 'Sur les dernières 24h',
-    icon: <AssignmentTurnedInOutlinedIcon fontSize="small" />,
-    trend: { label: '98% de conformité', color: 'success' as const },
-  },
-  {
-    label: 'Livraisons en cours',
-    value: 142,
-    helper: '17 campagnes actives',
-    icon: <LocalShippingOutlinedIcon fontSize="small" />,
-    trend: { label: '+4 vs hier', color: 'success' as const },
-  },
-  {
-    label: 'Montant facturé (M-1)',
-    value: '45,2 K€',
-    helper: 'En attente de paiement : 8,3 K€',
-    icon: <EuroOutlinedIcon fontSize="small" />,
-    trend: { label: '+6% vs M-2', color: 'info' as const },
-  },
-];
+const statIconFactory: Record<AdminDashboardStatIconKey, () => ReactElement> = {
+  pendingCouriers: () => <PeopleOutlineIcon fontSize="small" />,
+  validations: () => <AssignmentTurnedInOutlinedIcon fontSize="small" />,
+  deliveries: () => <LocalShippingOutlinedIcon fontSize="small" />,
+  billing: () => <EuroOutlinedIcon fontSize="small" />,
+};
 
-const pendingCouriers = [
-  { id: 'CR-541', name: 'Nadia Benali', company: 'NB Logistics', submittedAt: '09:15', documents: 5 },
-  { id: 'CR-542', name: 'Yohan Pereira', company: 'YP Services', submittedAt: '08:52', documents: 4 },
-  { id: 'CR-543', name: 'Sofiane Haddad', company: 'SH Delivery', submittedAt: '08:21', documents: 6 },
-];
-
-const activityItems: AdminActivityItem[] = [
-  {
-    id: 'activity-1',
-    title: 'Validation dossier CR-537',
-    description: 'Marie Courrier a approuvé le permis de conduire (niveau argent).',
-    timestamp: 'Il y a 12 min',
-    icon: <CheckCircleOutlineIcon fontSize="small" />,
-  },
-  {
-    id: 'activity-2',
-    title: 'Anomalie facture CTR-78412',
-    description: 'Montant détecté supérieur au devis ( +12% ).',
-    timestamp: 'Il y a 45 min',
-    icon: <ErrorOutlineIcon fontSize="small" />,
-  },
-  {
-    id: 'activity-3',
-    title: 'Campagne EcoMarket publiée',
-    description: 'Annonce MERCHANT_HOME_DELIVERY #MHD-009 active (Paris 17).',
-    timestamp: 'Il y a 1 h',
-    icon: <NotificationsActiveOutlinedIcon fontSize="small" />,
-  },
-];
-
-const globalAlerts = [
-  { id: 'alert-1', label: 'Document expiré', detail: 'Permis CR-521', severity: 'warning' as const },
-  { id: 'alert-2', label: 'Livraison critique', detail: 'MHD-002 • colis sensibles', severity: 'error' as const },
-];
+const activityIconFactory: Record<AdminDashboardActivityIconKey, () => ReactElement> = {
+  validation: () => <CheckCircleOutlineIcon fontSize="small" />,
+  anomaly: () => <ErrorOutlineIcon fontSize="small" />,
+  campaign: () => <NotificationsActiveOutlinedIcon fontSize="small" />,
+};
 
 export const AdminDashboardPage = () => {
   const navigate = useNavigate();
+  const { data } = useAdminDashboardData();
+
+  const stats = useMemo<AdminDashboardStat[]>(() => data?.stats ?? [], [data]);
+  const pendingCouriers = useMemo<AdminDashboardPendingCourier[]>(
+    () => data?.pendingCouriers ?? [],
+    [data],
+  );
+  const globalAlerts = useMemo<AdminDashboardAlert[]>(() => data?.globalAlerts ?? [], [data]);
+
+  const activityItems = useMemo<AdminActivityItem[]>(
+    () =>
+      (data?.activityItems ?? []).map((item) => ({
+        ...item,
+        icon: activityIconFactory[item.icon](),
+      })),
+    [data],
+  );
+
+  const computedStats = useMemo(
+    () =>
+      stats.map((stat) => ({
+        ...stat,
+        icon: statIconFactory[stat.icon](),
+      })),
+    [stats],
+  );
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -103,7 +85,7 @@ export const AdminDashboardPage = () => {
           gridTemplateColumns: { xs: 'repeat(auto-fit, minmax(220px, 1fr))' },
         }}
       >
-        {stats.map((stat) => (
+        {computedStats.map((stat) => (
           <AdminStatCard key={stat.label} {...stat} />
         ))}
       </Box>

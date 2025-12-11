@@ -34,7 +34,7 @@ export const ClientAnnouncementDetailPage = () => {
     [detail],
   );
   const canCancel = useMemo(
-    () => detail && detail.status !== 'COMPLETED' && detail.status !== 'CANCELLED',
+    () => detail && detail.status !== 'CANCELLED',
     [detail],
   );
 
@@ -150,7 +150,7 @@ export const ClientAnnouncementDetailPage = () => {
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <AnnouncementBudgetCard amount={detail.budget} />
+          <AnnouncementBudgetCard amount={detail.budget} currency={detail.currency} />
           <DeliveryTypeCard typeLabel={detail.type} />
           {detail.driver && (
             <AnnouncementDriverCard

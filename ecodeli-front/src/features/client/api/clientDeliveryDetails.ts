@@ -1,3 +1,5 @@
+import { isAxiosError } from 'axios';
+import { httpClient } from '../../../shared/api/httpClient';
 import type { DeliveryStatus } from './clientDeliveries';
 
 export interface DeliveryTimelineItem {
@@ -37,281 +39,264 @@ export interface DeliveryPrice {
 export interface DeliveryDetail {
   id: string;
   status: DeliveryStatus;
-  title: string;      
-  typeLabel: string;  
-
-  pickupTimeLabel: string;         
+  title: string;
+  typeLabel: string;
+  pickupTimeLabel: string;
   estimatedDeliveryLabel: string;
   actualDeliveryLabel?: string | null;
-
   from: DeliveryContactPoint;
   to: DeliveryContactPoint;
-
   driver: DeliveryDriver;
   price: DeliveryPrice;
   proofs: DeliveryProofs;
   timeline: DeliveryTimelineItem[];
 }
 
-const MOCK_DETAILS: Record<string, DeliveryDetail> = {
-  'DLV-001': {
-    id: 'DLV-001',
-    status: 'IN_TRANSIT',
-    title: 'Colis Paris → Lyon',
-    typeLabel: 'Petite livraison',
-    pickupTimeLabel: '15 Dec 2025, 10:30',
-    estimatedDeliveryLabel: '15 Dec 2025, 16:00',
-    actualDeliveryLabel: null,
-    from: {
-      address: '123 Rue de la Paix, 75001 Paris',
-      contactName: 'Jean Dupont',
-      phone: '+33 6 12 34 56 78',
-    },
-    to: {
-      address: '456 Avenue des Champs, 69001 Lyon',
-      contactName: 'Sophie Martin',
-      phone: '+33 6 98 76 54 32',
-    },
-    driver: {
-      name: 'Marie Lambert',
-      phone: '+33 6 11 22 33 44',
-      email: 'marie.lambert@ecodeli.fr',
-      rating: 4.8,
-      totalDeliveries: 156,
-      vehicle: 'Renault Kangoo - AB-123-CD',
-    },
-    price: {
-      total: 25,
-      base: 25,
-      serviceFees: 0,
-    },
-    proofs: {
-      pickup: true,
-      delivery: false,
-    },
-    timeline: [
-      {
-        status: 'ACCEPTED',
-        label: 'Livraison acceptée',
-        dateLabel: '2 Dec 2025, 09:15',
-        completed: true,
-      },
-      {
-        status: 'PICKED_UP',
-        label: 'Colis collecté',
-        dateLabel: '15 Dec 2025, 10:30',
-        completed: true,
-      },
-      {
-        status: 'IN_TRANSIT',
-        label: 'En cours de livraison',
-        dateLabel: '15 Dec 2025, 11:00',
-        completed: true,
-        current: true,
-      },
-      {
-        status: 'DELIVERED',
-        label: 'Livraison effectuée',
-        dateLabel: 'Estimation: 15 Dec 2025, 16:00',
-        completed: false,
-      },
-    ],
-  },
-  'DLV-002': {
-    id: 'DLV-002',
-    status: 'PICKED_UP',
-    title: 'Palette Bordeaux → Rennes',
-    typeLabel: 'Grande livraison',
-    pickupTimeLabel: '15 Dec 2025, 08:00',
-    estimatedDeliveryLabel: '15 Dec 2025, 18:00',
-    actualDeliveryLabel: null,
-    from: {
-      address: '78 Quai des Chartrons, 33000 Bordeaux',
-      contactName: 'Luc Moreau',
-      phone: '+33 6 00 11 22 33',
-    },
-    to: {
-      address: '12 Boulevard de la Liberté, 35000 Rennes',
-      contactName: 'Camille Le Goff',
-      phone: '+33 6 44 55 66 77',
-    },
-    driver: {
-      name: 'Thomas Martin',
-      phone: '+33 6 45 67 89 01',
-      email: 'thomas.martin@ecodeli.fr',
-      rating: 4.6,
-      totalDeliveries: 204,
-      vehicle: 'Mercedes Sprinter - CD-456-EF',
-    },
-    price: {
-      total: 30,
-      base: 28,
-      serviceFees: 2,
-    },
-    proofs: {
-      pickup: true,
-      delivery: false,
-    },
-    timeline: [
-      {
-        status: 'ACCEPTED',
-        label: 'Livraison acceptée',
-        dateLabel: '10 Dec 2025, 14:05',
-        completed: true,
-      },
-      {
-        status: 'PICKED_UP',
-        label: 'Colis collecté',
-        dateLabel: '15 Dec 2025, 08:00',
-        completed: true,
-        current: true,
-      },
-      {
-        status: 'IN_TRANSIT',
-        label: 'En cours de livraison',
-        dateLabel: 'En attente de départ',
-        completed: false,
-      },
-      {
-        status: 'DELIVERED',
-        label: 'Livraison effectuée',
-        dateLabel: 'Estimation: 15 Dec 2025, 18:00',
-        completed: false,
-      },
-    ],
-  },
-  'DLV-003': {
-    id: 'DLV-003',
-    status: 'DELIVERED',
-    title: 'Documents Marseille → Toulouse',
-    typeLabel: 'Document',
-    pickupTimeLabel: '10 Dec 2025, 09:15',
-    estimatedDeliveryLabel: '10 Dec 2025, 12:40',
-    actualDeliveryLabel: '10 Dec 2025, 12:32',
-    from: {
-      address: '14 Rue du Panier, 13002 Marseille',
-      contactName: 'Isabelle Caron',
-      phone: '+33 6 22 33 44 55',
-    },
-    to: {
-      address: '5 Place du Capitole, 31000 Toulouse',
-      contactName: 'Paul Lefèvre',
-      phone: '+33 6 77 88 99 00',
-    },
-    driver: {
-      name: 'Sophie Dubois',
-      phone: '+33 6 55 44 33 22',
-      email: 'sophie.dubois@ecodeli.fr',
-      rating: 4.9,
-      totalDeliveries: 312,
-      vehicle: 'Peugeot Expert - GH-789-IJ',
-    },
-    price: {
-      total: 15,
-      base: 13,
-      serviceFees: 2,
-    },
-    proofs: {
-      pickup: true,
-      delivery: true,
-    },
-    timeline: [
-      {
-        status: 'ACCEPTED',
-        label: 'Livraison acceptée',
-        dateLabel: '8 Dec 2025, 16:20',
-        completed: true,
-      },
-      {
-        status: 'PICKED_UP',
-        label: 'Colis collecté',
-        dateLabel: '10 Dec 2025, 09:15',
-        completed: true,
-      },
-      {
-        status: 'IN_TRANSIT',
-        label: 'En cours de livraison',
-        dateLabel: '10 Dec 2025, 10:00',
-        completed: true,
-      },
-      {
-        status: 'DELIVERED',
-        label: 'Livraison effectuée',
-        dateLabel: 'Livré le 10 Dec 2025, 12:32',
-        completed: true,
-        current: true,
-      },
-    ],
-  },
-  'DLV-004': {
-    id: 'DLV-004',
-    status: 'ACCEPTED',
-    title: 'Colis Lille → Nantes',
-    typeLabel: 'Livraison standard',
-    pickupTimeLabel: '20 Dec 2025, 07:45',
-    estimatedDeliveryLabel: '20 Dec 2025, 14:30',
-    actualDeliveryLabel: null,
-    from: {
-      address: '90 Rue Nationale, 59000 Lille',
-      contactName: 'Adrien Petit',
-      phone: '+33 6 88 77 66 55',
-    },
-    to: {
-      address: '30 Quai de la Fosse, 44000 Nantes',
-      contactName: 'Claire Roux',
-      phone: '+33 6 33 22 11 00',
-    },
-    driver: {
-      name: 'Pierre Bernard',
-      phone: '+33 6 99 88 77 66',
-      email: 'pierre.bernard@ecodeli.fr',
-      rating: 4.5,
-      totalDeliveries: 98,
-      vehicle: 'Citroën Jumpy - KL-012-MN',
-    },
-    price: {
-      total: 85,
-      base: 78,
-      serviceFees: 7,
-    },
-    proofs: {
-      pickup: false,
-      delivery: false,
-    },
-    timeline: [
-      {
-        status: 'ACCEPTED',
-        label: 'Livraison acceptée',
-        dateLabel: '18 Dec 2025, 11:00',
-        completed: true,
-        current: true,
-      },
-      {
-        status: 'PICKED_UP',
-        label: 'Collecte planifiée',
-        dateLabel: 'Prévue le 20 Dec 2025, 07:45',
-        completed: false,
-      },
-      {
-        status: 'IN_TRANSIT',
-        label: 'En cours de livraison',
-        dateLabel: 'En attente',
-        completed: false,
-      },
-      {
-        status: 'DELIVERED',
-        label: 'Livraison effectuée',
-        dateLabel: 'En attente',
-        completed: false,
-      },
-    ],
-  },
+interface AddressResponse {
+  line1?: string;
+  line2?: string;
+  postalCode?: string;
+  city?: string;
+  countryCode?: string;
+}
+
+interface ClientDeliveryContactResponse {
+  address?: string;
+  contactName?: string;
+  phoneNumber?: string;
+  name?: string;
+  phone?: string;
+  line1?: string;
+  line2?: string;
+  postalCode?: string;
+  city?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+}
+
+interface ClientDeliveryDriverResponse {
+  fullName?: string;
+  phoneNumber?: string;
+  email?: string;
+  rating?: number;
+  totalDeliveries?: number;
+  vehicleType?: string;
+  vehicleModel?: string;
+  vehiclePlate?: string;
+  name?: string;
+  phone?: string;
+  vehicleLabel?: string;
+}
+
+interface ClientDeliveryPriceResponse {
+  totalAmount?: number;
+  baseAmount?: number;
+  serviceFeeAmount?: number;
+  totalCents?: number;
+  baseCents?: number;
+  serviceFeeCents?: number;
+}
+
+interface ClientDeliveryProofsResponse {
+  pickupConfirmed?: boolean;
+  deliveryConfirmed?: boolean;
+  pickupProofReceived?: boolean;
+  deliveryProofReceived?: boolean;
+}
+
+interface ClientDeliveryTimelineResponse {
+  status?: string;
+  label?: string;
+  timestamp?: string;
+  completed?: boolean;
+  currentStep?: boolean;
+  timeRangeLabel?: string;
+}
+
+interface ClientDeliveryDetailResponse {
+  id: number | string;
+  status?: string;
+  reference?: string;
+  type?: string;
+  pickupTimestamp?: string;
+  estimatedDeliveryTimestamp?: string;
+  deliveredAt?: string;
+  pickup?: ClientDeliveryContactResponse;
+  dropoff?: ClientDeliveryContactResponse;
+  driver?: ClientDeliveryDriverResponse;
+  price?: ClientDeliveryPriceResponse;
+  proofs?: ClientDeliveryProofsResponse;
+  timeline?: ClientDeliveryTimelineResponse[];
+  fromAddress?: AddressResponse;
+  toAddress?: AddressResponse;
+  pickupAt?: string;
+  dropoffAt?: string;
+  pickupWindowStart?: string;
+  pickupWindowEnd?: string;
+  deliveryWindowStart?: string;
+  deliveryWindowEnd?: string;
+  amountCents?: number;
+  totalAmount?: number;
+}
+
+const normalizeStatus = (status?: string): DeliveryStatus => {
+  switch (String(status ?? '').toUpperCase()) {
+    case 'PICKED_UP':
+    case 'PICKUP_CONFIRMED':
+      return 'PICKED_UP';
+    case 'IN_TRANSIT':
+    case 'ON_ROUTE':
+      return 'IN_TRANSIT';
+    case 'DELIVERED':
+      return 'DELIVERED';
+    case 'ACCEPTED':
+    default:
+      return 'ACCEPTED';
+  }
 };
+
+const formatDateTime = (value?: string) => {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
+const mapContact = (contact?: ClientDeliveryContactResponse): DeliveryContactPoint => ({
+  address:
+    contact?.address ??
+    contact?.line1 ??
+    contact?.addressLine1 ??
+    'Adresse non renseignée',
+  contactName: contact?.contactName ?? contact?.name ?? 'Contact indisponible',
+  phone: contact?.phoneNumber ?? contact?.phone ?? 'N/A',
+});
+
+const buildVehicleLabel = (driver?: ClientDeliveryDriverResponse) => {
+  const segments = [driver?.vehicleType, driver?.vehicleModel, driver?.vehiclePlate]
+    .filter((segment) => Boolean(segment))
+    .join(' - ');
+  return segments.length > 0 ? segments : 'Véhicule à confirmer';
+};
+
+const mapDriver = (driver?: ClientDeliveryDriverResponse): DeliveryDriver => ({
+  name: driver?.fullName ?? driver?.name ?? 'Livreur EcoDeli',
+  phone: driver?.phoneNumber ?? driver?.phone ?? 'N/A',
+  email: driver?.email ?? 'contact@ecodeli.fr',
+  rating: driver?.rating ?? 0,
+  totalDeliveries: driver?.totalDeliveries ?? 0,
+  vehicle: driver?.vehicleLabel ?? buildVehicleLabel(driver),
+});
+
+const mapPrice = (price?: ClientDeliveryPriceResponse): DeliveryPrice => ({
+  total:
+    typeof price?.totalCents === 'number' && Number.isFinite(price.totalCents)
+      ? price.totalCents / 100
+      : price?.totalAmount ?? 0,
+  base:
+    typeof price?.baseCents === 'number' && Number.isFinite(price.baseCents)
+      ? price.baseCents / 100
+      : price?.baseAmount ?? price?.totalAmount ?? 0,
+  serviceFees:
+    typeof price?.serviceFeeCents === 'number' && Number.isFinite(price.serviceFeeCents)
+      ? price.serviceFeeCents / 100
+      : price?.serviceFeeAmount ?? 0,
+});
+
+const mapProofs = (proofs?: ClientDeliveryProofsResponse): DeliveryProofs => ({
+  pickup: Boolean(proofs?.pickupConfirmed ?? proofs?.pickupProofReceived),
+  delivery: Boolean(proofs?.deliveryConfirmed ?? proofs?.deliveryProofReceived),
+});
+
+const mapTimeline = (items: ClientDeliveryTimelineResponse[] = []): DeliveryTimelineItem[] =>
+  items.map((item) => ({
+    status: normalizeStatus(item.status),
+    label: item.label ?? 'Étape de livraison',
+    dateLabel: item.timeRangeLabel ?? formatDateTime(item.timestamp),
+    completed: Boolean(item.completed),
+    current: Boolean(item.currentStep),
+  }));
+
+const buildTitle = (payload: ClientDeliveryDetailResponse) => {
+  const pickup =
+    payload.pickup?.address ??
+    payload.pickup?.line1 ??
+    payload.pickup?.addressLine1 ??
+    payload.fromAddress?.line1;
+  const dropoff =
+    payload.dropoff?.address ??
+    payload.dropoff?.line1 ??
+    payload.dropoff?.addressLine1 ??
+    payload.toAddress?.line1;
+  if (pickup && dropoff) {
+    return `${pickup} → ${dropoff}`;
+  }
+  return payload.reference ?? 'Livraison EcoDeli';
+};
+
+const mapDeliveryDetail = (payload: ClientDeliveryDetailResponse): DeliveryDetail => ({
+  id: String(payload.id),
+  status: normalizeStatus(payload.status),
+  title: buildTitle(payload),
+  typeLabel: payload.type ?? 'Livraison',
+  pickupTimeLabel: formatDateTime(
+    payload.pickupTimestamp ?? payload.pickupAt ?? payload.pickupWindowStart,
+  ),
+  estimatedDeliveryLabel: formatDateTime(
+    payload.estimatedDeliveryTimestamp ?? payload.deliveryWindowStart ?? payload.dropoffAt,
+  ),
+  actualDeliveryLabel: payload.deliveredAt ? formatDateTime(payload.deliveredAt) : null,
+  from: mapContact(
+    payload.pickup ?? {
+      address: payload.fromAddress?.line1,
+      line1: payload.fromAddress?.line1,
+      line2: payload.fromAddress?.line2,
+      postalCode: payload.fromAddress?.postalCode,
+      city: payload.fromAddress?.city,
+    },
+  ),
+  to: mapContact(
+    payload.dropoff ?? {
+      address: payload.toAddress?.line1,
+      line1: payload.toAddress?.line1,
+      line2: payload.toAddress?.line2,
+      postalCode: payload.toAddress?.postalCode,
+      city: payload.toAddress?.city,
+    },
+  ),
+  driver: mapDriver(payload.driver),
+  price: mapPrice({
+    totalAmount: payload.price?.totalAmount ?? payload.totalAmount,
+    totalCents: payload.price?.totalCents ?? payload.amountCents,
+    baseAmount: payload.price?.baseAmount,
+    baseCents: payload.price?.baseCents,
+    serviceFeeAmount: payload.price?.serviceFeeAmount,
+    serviceFeeCents: payload.price?.serviceFeeCents,
+  }),
+  proofs: mapProofs(payload.proofs),
+  timeline: mapTimeline(payload.timeline),
+});
 
 export const fetchClientDeliveryDetail = async (
   id: string,
 ): Promise<DeliveryDetail> => {
-  // TODO: remplacer par GET /deliveries/{id}
-  const detail = MOCK_DETAILS[id] ?? Object.values(MOCK_DETAILS)[0];
-  return Promise.resolve(detail);
+  try {
+    const { data } = await httpClient.get<ClientDeliveryDetailResponse>(`/deliveries/${id}`);
+    return mapDeliveryDetail(data);
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      throw new Error('Livraison introuvable');
+    }
+    console.error('Failed to fetch client delivery detail', error);
+    throw new Error('Impossible de récupérer les détails de la livraison');
+  }
 };
