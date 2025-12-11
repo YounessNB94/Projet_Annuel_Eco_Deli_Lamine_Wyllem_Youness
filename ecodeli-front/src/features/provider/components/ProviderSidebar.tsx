@@ -17,9 +17,10 @@ export interface ProviderSidebarItem {
 
 interface ProviderSidebarProps {
   items: ProviderSidebarItem[];
+  onNavigate?: (path: string) => void;
 }
 
-export const ProviderSidebar = ({ items }: ProviderSidebarProps) => {
+export const ProviderSidebar = ({ items, onNavigate }: ProviderSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -40,7 +41,10 @@ export const ProviderSidebar = ({ items }: ProviderSidebarProps) => {
           <ListItemButton
             key={item.path}
             selected={isActive(item.path)}
-            onClick={() => navigate(item.path)}
+            onClick={() => {
+              navigate(item.path);
+              onNavigate?.(item.path);
+            }}
             sx={{ borderRadius: 2, mb: 0.5 }}
           >
             <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
