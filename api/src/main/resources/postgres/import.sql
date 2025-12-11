@@ -86,24 +86,25 @@ VALUES (501, 401, 'APPROVED', '2025-01-01', NULL, 202, now(), now(), 10004, now(
        (502, 402, 'PENDING_SIGNATURE', NULL, NULL, 205, now(), NULL, NULL, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO announcement (id, created_by_user_id, merchant_company_id, type, status, title, description, from_address_id, to_address_id, earliest_at, latest_at, budget_cents, currency, created_at)
-VALUES (501, 2, NULL, 'PARCEL_TRANSPORT', 'PUBLISHED', 'Colis Paris -> Marseille', 'Transport d’un petit colis', 101, 102, now(), now() + interval '2 days', 3500, 'EUR', now())
+INSERT INTO announcement (id, created_by_user_id, merchant_company_id, type, status, title, description, from_address_id, to_address_id, earliest_at, latest_at, budget_cents, currency, created_at, updated_at)
+VALUES (501, 10002, NULL, 'PARCEL_TRANSPORT', 'PUBLISHED', 'Colis Paris -> Marseille', 'Transport d’un petit colis', 101, 102, now(), now() + interval '2 days', 3500, 'EUR', now(), now()),
+       (502, 10004, 401, 'PARCEL_TRANSPORT', 'DRAFT', 'Livraison Lyon -> Lille', 'Palette fragile à livrer', 101, 102, now() + interval '3 days', now() + interval '4 days', 5200, 'EUR', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO announcement_assignment (id, announcement_id, assigned_courier_id, assigned_at, note)
-VALUES (502, 501, 3, now(), 'Pris en charge')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO announcement_assignment (announcement_id, courier_user_id, assigned_at, note)
+VALUES (501, 10003, now(), 'Pris en charge')
+ON CONFLICT (announcement_id, courier_user_id) DO NOTHING;
 
 INSERT INTO parcel (id, owner_user_id, weight_kg, length_cm, width_cm, height_cm, declared_value_cents, currency, special_instructions)
-VALUES (601, 2, 2.500, 30.00, 20.00, 10.00, 5000, 'EUR', 'Fragile')
+VALUES (601, 10002, 2.500, 30.00, 20.00, 10.00, 5000, 'EUR', 'Fragile')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO delivery (id, announcement_id, parcel_id, shipper_user_id, recipient_name, pickup_address_id, dropoff_address_id, status, price_cents, currency, created_at)
-VALUES (602, 501, 601, 2, 'Jean Dupont', 101, 102, 'ACCEPTED', 3500, 'EUR', now())
+INSERT INTO delivery (id, announcement_id, parcel_id, shipper_user_id, courier_user_id, recipient_name, pickup_address_id, dropoff_address_id, status, price_cents, currency, created_at, updated_at)
+VALUES (602, 501, 601, 10002, 10003, 'Jean Dupont', 101, 102, 'ASSIGNED', 3500, 'EUR', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO tracking_event (id, delivery_id, occurred_at, status, latitude, longitude, message)
-VALUES (603, 602, now(), 'ACCEPTED', 48.8566000, 2.3522000, 'Livraison acceptée'),
+VALUES (603, 602, now(), 'INFO', 48.8566000, 2.3522000, 'Livraison acceptée'),
        (604, 602, now() + interval '1 hour', 'PICKED_UP', 48.8570000, 2.3530000, 'Colis récupéré')
 ON CONFLICT (id) DO NOTHING;
 
