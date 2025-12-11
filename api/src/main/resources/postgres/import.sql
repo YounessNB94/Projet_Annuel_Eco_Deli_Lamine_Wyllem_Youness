@@ -151,3 +151,76 @@ VALUES (701, 10005, date_trunc('month', now())::timestamp,
         (date_trunc('month', now()) + interval '1 month - 1 day')::timestamp,
         42000, 'EUR', 'ISSUED', 203, now())
 ON CONFLICT (id) DO NOTHING;
+
+-- Additional demo data for admin dashboards & tests
+INSERT INTO address (id, label, line1, line2, postal_code, city, country_code, latitude, longitude)
+VALUES (103, 'Départ Lyon', '15 Rue de Lyon', NULL, '69001', 'Lyon', 'FR', 45.7640000, 4.8357000),
+       (104, 'Arrivée Lille', '8 Rue de Lille', NULL, '59000', 'Lille', 'FR', 50.6292000, 3.0573000)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO document (id, storage_key, file_name, mime_type, size_bytes, sha256, type, created_at)
+VALUES (207, 'providers/id_provider_003.pdf', 'id_provider_003.pdf', 'application/pdf', 32100, '9999999999999999999999999999999999999999999999999999999999999999', 'PROVIDER_PROOF', now()),
+       (208, 'providers/certif_provider_002.pdf', 'certif_provider_002.pdf', 'application/pdf', 28750, '8888888888888888888888888888888888888888888888888888888888888888', 'PROVIDER_PROOF', now())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO document_access (document_id, user_id, can_read)
+VALUES (207, 10006, true),
+       (208, 10006, true)
+ON CONFLICT (document_id, user_id) DO NOTHING;
+
+INSERT INTO provider_attachment (id, provider_user_id, document_id, type, status, submitted_at, reviewed_at, reviewed_by_admin_id, rejection_reason)
+VALUES (404, 10006, 207, 'ID', 'PENDING', now() - interval '2 days', NULL, NULL, NULL),
+       (405, 10006, 208, 'CERTIFICATE', 'APPROVED', now() - interval '10 days', now() - interval '8 days', 10001, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO announcement (id, created_by_user_id, merchant_company_id, type, status, title, description, from_address_id, to_address_id, earliest_at, latest_at, budget_cents, currency, created_at, updated_at)
+VALUES (503, 10004, 401, 'PARCEL_TRANSPORT', 'CANCELLED', 'Livraison Bordeaux', 'Commande annulée pour test admin', 103, 104, now() - interval '10 days', now() - interval '9 days', 4200, 'EUR', now() - interval '10 days', now() - interval '8 days'),
+       (504, 10002, NULL, 'PARCEL_TRANSPORT', 'PUBLISHED', 'Courses express Nantes', 'Livraison express pour dashboard', 103, 104, now() + interval '1 day', now() + interval '2 days', 2800, 'EUR', now(), now())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO announcement_assignment (announcement_id, courier_user_id, assigned_at, note)
+VALUES (504, 10003, now(), 'Dashboard sample')
+ON CONFLICT (announcement_id, courier_user_id) DO NOTHING;
+
+INSERT INTO parcel (id, owner_user_id, weight_kg, length_cm, width_cm, height_cm, declared_value_cents, currency, special_instructions)
+VALUES (602, 10004, 5.000, 40.00, 30.00, 25.00, 9000, 'EUR', 'Manipuler avec soin'),
+       (603, 10002, 1.200, 25.00, 15.00, 12.00, 1500, 'EUR', 'Livraison sous 24h')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO delivery (id, announcement_id, parcel_id, shipper_user_id, courier_user_id, recipient_name, pickup_address_id, dropoff_address_id, status, price_cents, currency, created_at, updated_at)
+VALUES (603, 504, 602, 10002, 10003, 'Julie Martin', 103, 104, 'IN_TRANSIT', 2800, 'EUR', now(), now()),
+       (604, 503, 603, 10004, 10003, 'Paul Durand', 103, 104, 'DELIVERED', 4200, 'EUR', now() - interval '7 days', now() - interval '6 days')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO tracking_event (id, delivery_id, occurred_at, status, latitude, longitude, message)
+VALUES (605, 603, now() - interval '1 hour', 'IN_TRANSIT', 47.2184000, -1.5536000, 'Colis en route vers destination'),
+       (606, 604, now() - interval '7 days', 'PICKED_UP', 44.8378000, -0.5792000, 'Colis récupéré à Bordeaux'),
+       (607, 604, now() - interval '6 days', 'DELIVERED', 43.2965000, 5.3698000, 'Livraison finalisée')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO payment (id, payer_user_id, stripe_payment_intent_id, amount_cents, currency, status, description, created_at, updated_at)
+VALUES (702, 10002, 'pi_demo_0002', 2800, 'EUR', 'SUCCEEDED', 'Paiement livraison Nantes', now(), now()),
+       (703, 10004, 'pi_demo_0003', 4200, 'EUR', 'FAILED', 'Paiement test échoué', now() - interval '2 days', now() - interval '1 day')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO billable_link (id, payment_id, delivery_id, type, label)
+VALUES (703, 702, 603, 'DELIVERY', 'Livraison 603'),
+       (704, 703, 604, 'DELIVERY', 'Livraison 604')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO invoice (id, invoice_no, user_id, payment_id, status, period_start, period_end, total_cents, currency, pdf_document_id, issued_at)
+VALUES (802, 'INV-2025-0002', 10002, 702, 'ISSUED', date_trunc('month', now())::date, (date_trunc('month', now()) + interval '1 month - 1 day')::date, 2800, 'EUR', 203, now())
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO invoice_line (id, invoice_id, label, quantity, unit_price_cents, total_cents)
+VALUES (804, 802, 'Livraison Courses express', 1, 2800, 2800)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO payout (id, beneficiary_user_id, status, period_start, period_end, amount_cents, currency, reference, sent_at)
+VALUES (902, 10003, 'SENT', date_trunc('month', now() - interval '1 month')::date, date_trunc('month', now())::date - interval '1 day', 2800, 'EUR', 'PAYOUT-2024-11-0001', now() - interval '15 days')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO payout_line (id, payout_id, delivery_id, amount_cents, currency, note, recorded_at)
+VALUES (903, 902, 603, 2800, 'EUR', 'Livraison Courses express', now() - interval '15 days')
+ON CONFLICT (id) DO NOTHING;
+

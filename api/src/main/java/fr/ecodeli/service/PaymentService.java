@@ -15,6 +15,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -78,5 +79,9 @@ public class PaymentService {
                     "PAYMENT_FORBIDDEN",
                     "Vous ne pouvez payer que vos propres livraisons");
         }
+    }
+
+    public List<Payment> listForAdmin(PaymentStatus status, Long payerId) {
+        return paymentRepository.search(status, payerId);
     }
 }

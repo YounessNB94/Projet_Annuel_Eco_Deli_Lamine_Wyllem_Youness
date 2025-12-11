@@ -59,8 +59,9 @@ public class AdminProviderResource {
 
     @GET
     public List<ProviderProfileAdminDto> listProviders(@QueryParam("status") ValidationStatus status,
-                                                       @QueryParam("pendingOnly") @DefaultValue("false") boolean pendingOnly) {
-        return profileService.listForAdmin(status, pendingOnly).stream()
+                                                       @QueryParam("pendingOnly") @DefaultValue("false") boolean pendingOnly,
+                                                       @QueryParam("search") String search) {
+        return profileService.searchForAdmin(status, pendingOnly, search).stream()
                 .map(profileMapper::toAdminDto)
                 .toList();
     }
@@ -112,6 +113,14 @@ public class AdminProviderResource {
                 .build();
     }
 
+    @GET
+    @Path("/{providerUserId}/documents")
+    public List<ProviderAttachmentAdminDto> listProviderDocuments(@PathParam("providerUserId") Long providerUserId) {
+        return attachmentService.listByProvider(providerUserId).stream()
+                .map(attachmentMapper::toAdminDto)
+                .toList();
+    }
+
     private AppUser currentAdmin() {
         return appUserService.findByEmail(identity.getPrincipal().getName())
                 .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
@@ -119,4 +128,3 @@ public class AdminProviderResource {
                         "Administrateur introuvable"));
     }
 }
-

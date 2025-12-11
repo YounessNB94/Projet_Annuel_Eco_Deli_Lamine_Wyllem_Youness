@@ -8,6 +8,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
+
 @ApplicationScoped
 public class CourierProfileService {
 
@@ -41,5 +43,15 @@ public class CourierProfileService {
         }
         return profile;
     }
-}
 
+    public List<CourierProfile> search(CourierProfileStatus status, Boolean hasDocuments, String search) {
+        return repository.search(status, hasDocuments, search);
+    }
+
+    public CourierProfile getWithUser(Long userId) {
+        return repository.find("user.id", userId).firstResultOptional()
+                .orElseThrow(() -> new EcodeliException(Response.Status.NOT_FOUND,
+                        "COURIER_NOT_FOUND",
+                        "Livreur introuvable"));
+    }
+}

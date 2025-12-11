@@ -33,4 +33,24 @@ public class AnnouncementRepository implements PanacheRepository<Announcement> {
         }
         return find(query.toString(), params).list();
     }
+
+    public List<Announcement> searchForAdmin(AnnouncementStatus status,
+                                             AnnouncementType type,
+                                             Long merchantCompanyId) {
+        var query = new StringBuilder("1=1");
+        Map<String, Object> params = new HashMap<>();
+        if (status != null) {
+            query.append(" AND status = :status");
+            params.put("status", status);
+        }
+        if (type != null) {
+            query.append(" AND type = :type");
+            params.put("type", type);
+        }
+        if (merchantCompanyId != null) {
+            query.append(" AND merchantCompany.id = :merchantCompanyId");
+            params.put("merchantCompanyId", merchantCompanyId);
+        }
+        return find(query.toString(), params).list();
+    }
 }

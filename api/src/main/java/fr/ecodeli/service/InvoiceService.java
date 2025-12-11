@@ -18,6 +18,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
 import java.util.List;
 
 @ApplicationScoped
@@ -55,6 +56,16 @@ public class InvoiceService {
 
     public List<Invoice> listAll() {
         return invoiceRepository.listAll();
+    }
+
+    public List<Invoice> listByPeriod(YearMonth period) {
+        return invoiceRepository.search(null, startOf(period), endOf(period));
+    }
+
+    public List<Invoice> listForAdmin(InvoiceStatus status, YearMonth period) {
+        return invoiceRepository.search(status,
+                period != null ? startOf(period) : null,
+                period != null ? endOf(period) : null);
     }
 
     @Transactional
@@ -135,5 +146,13 @@ public class InvoiceService {
             case INVOICE -> "Facture liée";
             case MERCHANT_CONTRACT -> "Contrat marchand";
         };
+    }
+
+    private OffsetDateTime startOf(YearMonth period) {
+        return period.atDay(1).atStartOfDay().atOffset(java.time.ZoneOffset.UTC);
+    }
+
+    private OffsetDateTime endOf(YearMonth period) {
+        return period.atEndOfMonth().atTime(23, 59, 59).atZone(java.time.ZoneOffset.UTC).toOffsetDateTime();
     }
 }

@@ -47,6 +47,10 @@ public class ProviderAttachmentService {
         return repository.listAll();
     }
 
+    public List<ProviderAttachment> listByProvider(Long providerUserId) {
+        return repository.list("providerUserId", providerUserId);
+    }
+
     @Transactional
     public ProviderAttachment save(AppUser user, ProviderAttachment attachment) {
         attachment.setProvider(user);

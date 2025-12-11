@@ -7,15 +7,16 @@ import fr.ecodeli.entity.DeliveryStatus;
 import fr.ecodeli.entity.TrackingEventType;
 import fr.ecodeli.repository.AnnouncementRepository;
 import fr.ecodeli.repository.DeliveryRepository;
+import java.util.List;
+import java.util.EnumMap;
+import java.util.Map;
+
 import fr.ecodeli.web.exception.EcodeliException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response;
 import java.time.OffsetDateTime;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
 
 @ApplicationScoped
 public class DeliveryService {
@@ -63,6 +64,10 @@ public class DeliveryService {
 
     public List<Delivery> listByStatus(DeliveryStatus status, int limit) {
         return deliveryRepository.findByStatus(status, limit);
+    }
+
+    public List<Delivery> listForAdmin(DeliveryStatus status, Long courierUserId) {
+        return deliveryRepository.search(status, courierUserId);
     }
 
     @Transactional

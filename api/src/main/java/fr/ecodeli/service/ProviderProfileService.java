@@ -29,13 +29,11 @@ public class ProviderProfileService {
     }
 
     public List<ProviderProfile> listForAdmin(ValidationStatus status, boolean pendingOnly) {
-        if (pendingOnly) {
-            return repository.list("status", ValidationStatus.PENDING);
-        }
-        if (status != null) {
-            return repository.list("status", status);
-        }
-        return repository.listAll();
+        return repository.search(status, pendingOnly, null);
+    }
+
+    public List<ProviderProfile> searchForAdmin(ValidationStatus status, boolean pendingOnly, String search) {
+        return repository.search(status, pendingOnly, search);
     }
 
     public ProviderProfile getRequired(Long userId) {

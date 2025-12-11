@@ -40,6 +40,10 @@ public class AnnouncementService {
         return repository.listByFilter(null, false, status, type);
     }
 
+    public List<Announcement> listAllForAdmin(AnnouncementStatus status, AnnouncementType type, Long merchantCompanyId) {
+        return repository.searchForAdmin(status, type, merchantCompanyId);
+    }
+
     @Transactional
     public Announcement create(AppUser creator, Announcement announcement) {
         announcement.setId(null);

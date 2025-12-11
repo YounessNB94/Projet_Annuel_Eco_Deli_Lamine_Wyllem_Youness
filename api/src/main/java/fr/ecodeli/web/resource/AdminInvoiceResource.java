@@ -1,15 +1,16 @@
 package fr.ecodeli.web.resource;
 
 import fr.ecodeli.entity.InvoiceStatus;
-import fr.ecodeli.mapper.InvoiceMapper;
+import fr.ecodeli.mapper.AdminDashboardMapper;
 import fr.ecodeli.service.InvoiceService;
-import fr.ecodeli.web.dto.InvoiceDto;
+import fr.ecodeli.web.dto.admin.InvoiceAdminDto;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import java.time.YearMonth;
 import java.util.List;
 
 @Path("/api/v1/admin/invoices")
@@ -17,20 +18,22 @@ import java.util.List;
 public class AdminInvoiceResource {
 
     private final InvoiceService invoiceService;
-    private final InvoiceMapper invoiceMapper;
+    private final AdminDashboardMapper mapper;
 
     @Inject
     public AdminInvoiceResource(InvoiceService invoiceService,
-                                InvoiceMapper invoiceMapper) {
+                                AdminDashboardMapper mapper) {
         this.invoiceService = invoiceService;
-        this.invoiceMapper = invoiceMapper;
+        this.mapper = mapper;
     }
 
     @GET
     @jakarta.ws.rs.Produces(MediaType.APPLICATION_JSON)
-    public List<InvoiceDto> list(@QueryParam("status") InvoiceStatus status) {
-        var invoices = status != null ? invoiceService.listByStatus(status) : invoiceService.listAll();
-        return invoices.stream().map(invoiceMapper::toDto).toList();
+    public List<InvoiceAdminDto> list(@QueryParam("status") InvoiceStatus status,
+                                      @QueryParam("period") String period) {
+        var ym = period != null ? YearMonth.parse(period) : null;
+        return invoiceService.listForAdmin(status, ym).stream()
+                .map(mapper::toDto)
+                .toList();
     }
 }
-

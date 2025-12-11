@@ -17,5 +17,18 @@ public class DeliveryRepository implements PanacheRepository<Delivery> {
     public List<Delivery> findByStatus(DeliveryStatus status, int limit) {
         return find("status", status).range(0, Math.max(0, limit - 1)).list();
     }
-}
 
+    public List<Delivery> search(DeliveryStatus status, Long courierUserId) {
+        var query = new StringBuilder("1=1");
+        var params = new java.util.HashMap<String, Object>();
+        if (status != null) {
+            query.append(" AND status = :status");
+            params.put("status", status);
+        }
+        if (courierUserId != null) {
+            query.append(" AND courier.id = :courierId");
+            params.put("courierId", courierUserId);
+        }
+        return find(query.toString(), params).list();
+    }
+}
